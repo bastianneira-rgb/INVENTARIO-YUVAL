@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventarios Yuval</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Segoe UI,system-ui,sans-serif;background:#f5f4f0;color:#1a1a1a;font-size:14px}
+:root{--t50:#E1F5EE;--t100:#9FE1CB;--t4:#1D9E75;--t6:#0F6E56;--t8:#085041;--b50:#E6F1FB;--b4:#378ADD;--b6:#185FA5;--b8:#0C447C;--a50:#FAEEDA;--a4:#BA7517;--a6:#854F0B;--a8:#633806;--g50:#EAF3DE;--g4:#639922;--g6:#3B6D11;--r50:#FCEBEB;--r4:#E24B4A;--r6:#A32D2D;--gr50:#F1EFE8;--gr4:#888780;--gr6:#5F5E5A}
+.app{min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:#fff;border-bottom:.5px solid rgba(0,0,0,.12);padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:56px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:500;font-size:15px;color:var(--t6)}
+.logo i{font-size:22px}
+.logo-s{font-size:12px;color:#666}
+.dbtn{margin-left:auto;display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;border:.5px solid rgba(0,0,0,.25);background:transparent;cursor:pointer;font-size:13px;transition:background .15s}
+.dbtn:hover{background:#f0eeea}
+.dbtn.on{border-color:var(--t4);color:var(--t6)}
+.nav{background:#fff;border-bottom:.5px solid rgba(0,0,0,.12);display:flex;padding:0 1.5rem;overflow-x:auto}
+.nt{padding:12px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:#666;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all .15s}
+.nt:hover{color:#1a1a1a}
+.nt.a{color:var(--t6);border-bottom-color:var(--t4);font-weight:500}
+.nt i{font-size:16px}
+.main{flex:1;padding:1.5rem;max-width:1100px;margin:0 auto;width:100%}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px}
+.st{font-size:16px;font-weight:500;display:flex;align-items:center;gap:8px}
+.st i{font-size:18px;color:var(--t4)}
+.btn{padding:7px 14px;border-radius:6px;border:.5px solid rgba(0,0,0,.25);background:transparent;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px;transition:all .15s;color:#1a1a1a}
+.btn:hover{background:#f0eeea}
+.btn:active{transform:scale(.98)}
+.bp{background:var(--t4);color:#fff;border-color:var(--t6)}
+.bp:hover{background:var(--t6)}
+.bd{color:var(--r4);border-color:var(--r4)}
+.bd:hover{background:var(--r50)}
+.bs{padding:4px 10px;font-size:12px}
+.card{background:#fff;border:.5px solid rgba(0,0,0,.12);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.fgi{display:flex;flex-direction:column;gap:5px}
+.fgi.full{grid-column:1/-1}
+label{font-size:11px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:.05em}
+input,select,textarea{width:100%;padding:7px 10px;border:.5px solid rgba(0,0,0,.25);border-radius:6px;font-size:13px;background:#fff;color:#1a1a1a;outline:none;transition:border-color .15s;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--t4);box-shadow:0 0 0 2px rgba(29,158,117,.1)}
+.fa{display:flex;gap:8px;margin-top:1rem;justify-content:flex-end;flex-wrap:wrap}
+.tw{overflow-x:auto;border-radius:8px;border:.5px solid rgba(0,0,0,.12)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:580px}
+th{background:#f5f4f0;padding:9px 12px;text-align:left;font-weight:500;font-size:11px;color:#666;white-space:nowrap;border-bottom:.5px solid rgba(0,0,0,.1);text-transform:uppercase;letter-spacing:.04em}
+td{padding:9px 12px;border-bottom:.5px solid rgba(0,0,0,.07);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.bgt{background:var(--t50);color:var(--t8)}
+.bgb{background:var(--b50);color:var(--b8)}
+.bga{background:var(--a50);color:var(--a8)}
+.bgg{background:var(--g50);color:var(--g6)}
+.bgr{background:var(--r50);color:var(--r6)}
+.badge,.bgt,.bgb,.bga,.bgg,.bgr{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem}
+.sc{background:#f0eeea;border-radius:8px;padding:12px 16px}
+.sl{font-size:11px;color:#666;margin-bottom:4px}
+.sv{font-size:22px;font-weight:500}
+.tl{color:var(--t6)}
+.bl{color:var(--b6)}
+.al{color:var(--a6)}
+.empty{text-align:center;padding:3rem 1rem;color:#888}
+.empty i{font-size:40px;margin-bottom:8px;display:block;opacity:.4}
+.div{height:.5px;background:rgba(0,0,0,.08);margin:1rem 0}
+.tag{display:inline-flex;align-items:center;font-size:12px;color:#666;background:#f0eeea;padding:2px 8px;border-radius:4px;font-family:monospace}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
+.mod{background:#fff;border-radius:12px;padding:1.5rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;border:.5px solid rgba(0,0,0,.2)}
+.modw{max-width:700px}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.mt{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px}
+.xb{background:none;border:none;cursor:pointer;font-size:20px;color:#666;padding:2px 6px;border-radius:4px}
+.xb:hover{background:#f0eeea}
+.sb{display:flex;align-items:center;gap:8px;margin-bottom:1rem;background:#fff;border:.5px solid rgba(0,0,0,.2);border-radius:6px;padding:0 10px}
+.sb i{color:#888;font-size:16px}
+.sb input{border:none;box-shadow:none;padding-left:4px}
+.sb input:focus{box-shadow:none;border:none}
+.al2{padding:10px 14px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.as{background:var(--g50);color:var(--g6);border:.5px solid #C0DD97}
+.ai{background:var(--b50);color:var(--b8);border:.5px solid #B5D4F4}
+.aw{background:var(--a50);color:var(--a8);border:.5px solid #FAC775}
+.tp{display:flex;gap:4px;background:#f0eeea;padding:4px;border-radius:8px;margin-bottom:1.25rem}
+.tpp{padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer;border:none;background:transparent;color:#666;transition:all .15s}
+.tpp.a{background:#fff;color:#1a1a1a;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.acw{position:relative}
+.acl{position:absolute;background:#fff;border:.5px solid rgba(0,0,0,.2);border-radius:6px;width:100%;z-index:20;max-height:160px;overflow-y:auto;margin-top:2px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.aci{padding:8px 12px;cursor:pointer;font-size:13px}
+.aci:hover{background:#f0eeea}
+.slo{color:var(--r4);font-weight:500}
+.ri{display:flex;gap:8px;margin-bottom:8px;align-items:flex-end}
+/* photos */
+.pua{border:1.5px dashed rgba(0,0,0,.2);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;transition:all .15s;min-height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:#888;font-size:13px}
+.pua:hover{border-color:var(--t4);background:var(--t50);color:var(--t6)}
+.pua i{font-size:24px}
+.pgrid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.pth{position:relative;width:82px;height:82px;border-radius:6px;overflow:hidden;border:.5px solid rgba(0,0,0,.15)}
+.pth img{width:100%;height:100%;object-fit:cover}
+.pth .dp{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 5px;line-height:1.5}
+/* drive guide */
+.gs{display:flex;gap:12px;margin-bottom:1rem;align-items:flex-start}
+.gn{width:28px;height:28px;border-radius:50%;background:var(--t4);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.gb{flex:1}
+.gt{font-weight:500;font-size:13px;margin-bottom:3px}
+.gd{font-size:12px;color:#666;line-height:1.7}
+.cb{background:#f5f4f0;border:.5px solid rgba(0,0,0,.15);border-radius:4px;padding:5px 10px;font-family:monospace;font-size:12px;margin-top:4px;word-break:break-all;color:#333}
+@media(max-width:600px){.ri{flex-direction:column}.ri>*{width:100%!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="hdr">
+  <div class="logo"><i class="ti ti-package"></i><span>Inventarios Yuval</span><span class="logo-s">— Control de Stock</span></div>
+  <button class="dbtn" id="dbtn" onclick="toggleDrive()"><i class="ti ti-brand-google-drive"></i><span id="dlbl">Conectar Google Drive</span></button>
+</div>
+<div class="nav">
+  <div class="nt a" onclick="showTab('stock')" id="tab-stock"><i class="ti ti-database"></i> Base de stock</div>
+  <div class="nt" onclick="showTab('despacho')" id="tab-despacho"><i class="ti ti-truck-delivery"></i> Despacho / Entrega</div>
+  <div class="nt" onclick="showTab('ingreso")" id="tab-ingreso"><i class="ti ti-package-import"></i> Ingreso de mercancías</div>
+  <div class="nt" onclick="showTab('historial')" id="tab-historial"><i class="ti ti-history"></i> Historial</div>
+  <div class="nt" onclick="showTab('dguide')" id="tab-dguide"><i class="ti ti-brand-google-drive"></i> Configurar Drive</div>
+</div>
+<div class="main">
+
+<!-- STOCK -->
+<div id="panel-stock">
+  <div id="alert-area"></div>
+  <div class="sgrid" id="stats-stock"></div>
+  <div class="sh"><div class="st"><i class="ti ti-database"></i> Catálogo de materiales</div><button class="btn bp" onclick="openModal('mnew')"><i class="ti ti-plus"></i> Nuevo ítem</button></div>
+  <div class="sb"><i class="ti ti-search"></i><input type="text" id="q" placeholder="Buscar código, glosa, tipo..." oninput="renderStock()"></div>
+  <div class="tw"><table><thead><tr><th>Código</th><th>Glosa / Descripción</th><th>Tipo</th><th>Unidad</th><th style="text-align:right">Stock bodega</th><th>Estado</th><th></th></tr></thead><tbody id="tbody-stock"></tbody></table></div>
+</div>
+
+<!-- DESPACHO -->
+<div id="panel-despacho" style="display:none">
+  <div class="sh"><div class="st"><i class="ti ti-truck-delivery"></i> Registrar despacho / entrega</div></div>
+  <div class="card">
+    <div class="fg">
+      <div class="fgi"><label>N° Acta de entrega</label><input type="text" id="d-acta" placeholder="Ej: ACT-2025-001"></div>
+      <div class="fgi"><label>Fecha</label><input type="date" id="d-fecha"></div>
+      <div class="fgi"><label>Delegación</label><input type="text" id="d-deleg" placeholder="Ej: Delegación Chillán"></div>
+      <div class="fgi"><label>Persona que entrega</label><input type="text" id="d-entr" placeholder="Nombre completo"></div>
+      <div class="fgi full"><label>Trabajador / Quien recibe</label><input type="text" id="d-recibe" placeholder="Nombre del receptor"></div>
+      <div class="fgi full"><label>Observaciones</label><textarea id="d-obs" rows="2" placeholder="Notas para el acta..."></textarea></div>
+    </div>
+    <div class="div"></div>
+    <div style="font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="ti ti-list" style="color:var(--t4)"></i> Materiales a despachar</div>
+    <div id="di"></div>
+    <button class="btn" style="margin-top:8px" onclick="addDI()"><i class="ti ti-plus"></i> Agregar material</button>
+    <div class="div"></div>
+    <div style="font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;margin-bottom:10px"><i class="ti ti-camera" style="color:var(--t4)"></i> Fotografías <span style="font-size:11px;color:#888;font-weight:400">(opcional — se incluyen en el PDF)</span></div>
+    <div class="pua" onclick="document.getElementById('pi').click()" id="pua"><i class="ti ti-photo-plus"></i><span>Clic o arrastre fotos aquí</span><span style="font-size:11px;color:#aaa">JPG/PNG — máx. 5 fotos</span></div>
+    <input type="file" id="pi" multiple accept="image/*" style="display:none" onchange="handlePhotos(this)">
+    <div class="pgrid" id="pgrid"></div>
+    <div class="fa">
+      <button class="btn" onclick="clearD()"><i class="ti ti-x"></i> Limpiar</button>
+      <button class="btn bp" onclick="saveD()"><i class="ti ti-device-floppy"></i> Registrar despacho</button>
+    </div>
+  </div>
+</div>
+
+<!-- INGRESO -->
+<div id="panel-ingreso" style="display:none">
+  <div class="sh"><div class="st"><i class="ti ti-package-import"></i> Ingreso de nuevas mercancías</div></div>
+  <div class="card">
+    <div class="fg">
+      <div class="fgi"><label>N° Guía o Factura</label><input type="text" id="i-guia" placeholder="Ej: FAC-2025-0088"></div>
+      <div class="fgi"><label>Fecha</label><input type="date" id="i-fecha"></div>
+      <div class="fgi"><label>Proveedor (opcional)</label><input type="text" id="i-prov" placeholder="Nombre del proveedor"></div>
+      <div class="fgi"><label>Observaciones</label><input type="text" id="i-obs" placeholder="Notas adicionales"></div>
+    </div>
+    <div class="div"></div>
+    <div style="font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="ti ti-list" style="color:var(--t4)"></i> Materiales recibidos</div>
+    <div id="ii"></div>
+    <button class="btn" style="margin-top:8px" onclick="addII()"><i class="ti ti-plus"></i> Agregar material</button>
+    <div class="fa">
+      <button class="btn" onclick="clearI()"><i class="ti ti-x"></i> Limpiar</button>
+      <button class="btn bp" onclick="saveI()"><i class="ti ti-package-import"></i> Registrar ingreso</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORIAL -->
+<div id="panel-historial" style="display:none">
+  <div class="sh"><div class="st"><i class="ti ti-history"></i> Historial de movimientos</div><button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i> Exportar CSV</button></div>
+  <div class="tp">
+    <button class="tpp a" onclick="fh('todos',this)">Todos</button>
+    <button class="tpp" onclick="fh('despacho',this)">Despachos</button>
+    <button class="tpp" onclick="fh('ingreso',this)">Ingresos</button>
+  </div>
+  <div class="tw"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Código</th><th>Glosa</th><th style="text-align:right">Cantidad</th><th>Referencia</th><th>PDF</th></tr></thead><tbody id="th"></tbody></table></div>
+</div>
+
+<!-- DRIVE GUIDE -->
+<div id="panel-dguide" style="display:none">
+  <div class="sh"><div class="st"><i class="ti ti-brand-google-drive"></i> Cómo configurar Google Drive / Sheets</div></div>
+  <div class="card">
+    <p style="font-size:13px;color:#666;margin-bottom:1.25rem;line-height:1.7">La sincronización usa la <strong>Google Sheets API</strong>. Al registrar cada despacho o ingreso, el stock y los movimientos se actualizan automáticamente en una hoja de cálculo en su Google Drive. Configure esto una sola vez:</p>
+    <div class="gs"><div class="gn">1</div><div class="gb"><div class="gt">Crear proyecto en Google Cloud Console</div><div class="gd">Vaya a <strong>console.cloud.google.com</strong> → clic en "Seleccionar proyecto" (arriba) → <strong>Nuevo proyecto</strong>. Asigne un nombre (ej: Inventarios Yuval) y créelo.</div></div></div>
+    <div class="gs"><div class="gn">2</div><div class="gb"><div class="gt">Habilitar APIs</div><div class="gd">Menú lateral → <strong>APIs y servicios → Biblioteca</strong>. Busque y habilite:<br>• <strong>Google Sheets API</strong><br>• <strong>Google Drive API</strong></div></div></div>
+    <div class="gs"><div class="gn">3</div><div class="gb"><div class="gt">Crear credenciales OAuth 2.0</div><div class="gd"><strong>APIs y servicios → Credenciales → Crear credenciales → ID de cliente de OAuth</strong><br>Tipo: <strong>Aplicación web</strong><br>En "Orígenes de JavaScript autorizados" agregue la URL donde abre esta app.<br>Copie el <strong>Client ID</strong> que termina en <code>.apps.googleusercontent.com</code></div></div></div>
+    <div class="gs"><div class="gn">4</div><div class="gb"><div class="gt">Pantalla de consentimiento OAuth</div><div class="gd">Si se lo solicita: seleccione <strong>Externo</strong>, complete nombre y correo, en Scopes agregue <code>spreadsheets</code> y <code>drive.file</code>. En "Usuarios de prueba" agregue su correo Gmail.</div></div></div>
+    <div class="gs"><div class="gn">5</div><div class="gb"><div class="gt">Conectar en Inventarios Yuval</div><div class="gd">Clic en <strong>"Conectar Google Drive"</strong> (barra superior) → ingrese el Client ID → autorice en la ventana de Google. El botón mostrará <em>✓ Drive conectado</em>.</div></div></div>
+    <div style="background:var(--a50);border:.5px solid #FAC775;border-radius:8px;padding:12px 16px;font-size:12px;color:var(--a8);margin-top:.5rem">
+      <strong>Importante:</strong> Si usa el archivo directamente (doble clic en el .html), el origen es <code>null</code> y el OAuth no funcionará. Sirva el archivo con:<div class="cb">python3 -m http.server 8080</div>Luego abra <strong>http://localhost:8080</strong> y use ese URL en las credenciales de Google Cloud.
+    </div>
+  </div>
+</div>
+
+</div></div>
+
+<!-- Modal nuevo item -->
+<div id="mnew" style="display:none">
+  <div class="ov" onclick="if(event.target===this)closeModal('mnew')">
+    <div class="mod">
+      <div class="mh"><div class="mt"><i class="ti ti-plus"></i> Nuevo ítem en stock</div><button class="xb" onclick="closeModal('mnew')"><i class="ti ti-x"></i></button></div>
+      <div class="fg">
+        <div class="fgi"><label>Código *</label><input type="text" id="nc" placeholder="Ej: MAT-001"></div>
+        <div class="fgi"><label>Tipo *</label><select id="nt"><option value="">Seleccionar...</option><option>Herramienta</option><option>Material eléctrico</option><option>EPP</option><option>Consumible</option><option>Repuesto</option><option>Otro</option></select></div>
+        <div class="fgi full"><label>Glosa / Descripción *</label><input type="text" id="ng" placeholder="Descripción del material"></div>
+        <div class="fgi"><label>Unidad *</label><select id="nu"><option value="">Seleccionar...</option><option>Unidad</option><option>Metro</option><option>Kg</option><option>Litro</option><option>Par</option><option>Caja</option><option>Rollo</option><option>Juego</option><option>Bobina</option></select></div>
+        <div class="fgi"><label>Stock inicial</label><input type="number" id="ns" min="0" value="0"></div>
+      </div>
+      <div class="fa"><button class="btn" onclick="closeModal('mnew')">Cancelar</button><button class="btn bp" onclick="saveNI()"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal PDF -->
+<div id="mpdf" style="display:none">
+  <div class="ov" onclick="if(event.target===this)closeModal('mpdf')">
+    <div class="mod modw">
+      <div class="mh"><div class="mt"><i class="ti ti-file-text"></i> Vista previa — Acta de entrega</div><button class="xb" onclick="closeModal('mpdf')"><i class="ti ti-x"></i></button></div>
+      <div id="ppc" style="border:.5px solid rgba(0,0,0,.12);border-radius:8px;overflow:hidden;margin-bottom:1rem;max-height:520px;overflow-y:auto"></div>
+      <div class="fa"><button class="btn" onclick="closeModal('mpdf')">Cerrar</button><button class="btn bp" id="dlbtn" onclick="dlPDF()"><i class="ti ti-download"></i> Descargar PDF</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+let DC=false,DT=null,photos=[],pdfRec=null;
+const SNAME="Inventarios_Yuval";
+let S={
+  stock:JSON.parse(localStorage.getItem('ips')||'[]'),
+  movs:JSON.parse(localStorage.getItem('ipm')||'[]'),
+  desp:JSON.parse(localStorage.getItem('ipd')||'[]')
+};
+function save(){localStorage.setItem('ips',JSON.stringify(S.stock));localStorage.setItem('ipm',JSON.stringify(S.movs));localStorage.setItem('ipd',JSON.stringify(S.desp));}
+if(!S.stock.length){S.stock=[{c:'MAT-001',g:'Cable XLPE 4x16mm',t:'Material eléctrico',u:'Metro',s:240},{c:'EPP-001',g:'Casco dieléctrico clase E',t:'EPP',u:'Unidad',s:15},{c:'HER-001',g:'Llave torquímetro 3/4',t:'Herramienta',u:'Unidad',s:4},{c:'MAT-002',g:'Conector bimetálico 95mm',t:'Material eléctrico',u:'Unidad',s:80},{c:'EPP-002',g:'Guante aislante clase 00',t:'EPP',u:'Par',s:3},{c:'CON-001',g:'Cinta autofundente 25mm',t:'Consumible',u:'Rollo',s:22}];save();}
+
+function showTab(t){
+  ['stock','despacho','ingreso','historial','dguide'].forEach(x=>{
+    const p=document.getElementById('panel-'+x);const tab=document.getElementById('tab-'+x);
+    if(p)p.style.display=x===t?'':'none';
+    if(tab)tab.classList.toggle('a',x===t);
+  });
+  if(t==='stock'){rStats();rStock();}
+  if(t==='despacho'){rDI();document.getElementById('d-fecha').valueAsDate=new Date();}
+  if(t==='ingreso'){rII();document.getElementById('i-fecha').valueAsDate=new Date();}
+  if(t==='historial')rH('todos');
+}
+
+function rStats(){
+  const tot=S.stock.length,su=S.stock.reduce((a,b)=>a+(b.s||0),0),lo=S.stock.filter(i=>i.s<=5).length;
+  document.getElementById('stats-stock').innerHTML=`<div class="sc"><div class="sl">Ítems catálogo</div><div class="sv tl">${tot}</div></div><div class="sc"><div class="sl">Unidades bodega</div><div class="sv bl">${su.toLocaleString('es-CL')}</div></div><div class="sc"><div class="sl">Stock crítico (≤5)</div><div class="sv al">${lo}</div></div><div class="sc"><div class="sl">Movimientos</div><div class="sv" style="color:var(--gr6)">${S.movs.length}</div></div>`;
+}
+
+const TB={'Material eléctrico':'bgb','EPP':'bgt','Herramienta':'bga','Consumible':'bgg','Repuesto':'bgr'};
+function rStock(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  let items=S.stock.filter(i=>!q||i.c.toLowerCase().includes(q)||i.g.toLowerCase().includes(q)||(i.t||'').toLowerCase().includes(q));
+  const tb=document.getElementById('tbody-stock');
+  if(!items.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><i class="ti ti-database-off"></i><div>Sin resultados</div></div></td></tr>';return;}
+  tb.innerHTML=items.map(item=>{
+    const idx=S.stock.indexOf(item);
+    const badge=item.s===0?'<span class="bgr">Sin stock</span>':item.s<=5?'<span class="bga">Stock bajo</span>':'<span class="bgt">Normal</span>';
+    return `<tr><td><span class="tag">${item.c}</span></td><td>${item.g}</td><td><span class="badge ${TB[item.t]||''}">${item.t}</span></td><td>${item.u}</td><td style="text-align:right" class="${item.s<=5?'slo':''}">${item.s}</td><td>${badge}</td><td><button class="btn bs bd" onclick="delItem(${idx})"><i class="ti ti-trash"></i></button></td></tr>`;
+  }).join('');
+}
+
+function delItem(i){if(confirm('¿Eliminar este ítem?')){S.stock.splice(i,1);save();rStock();rStats();alert2('Ítem eliminado','s');}}
+
+function openModal(id){document.getElementById(id).style.display='flex';}
+function closeModal(id){document.getElementById(id).style.display='none';}
+
+function saveNI(){
+  const c=document.getElementById('nc').value.trim(),g=document.getElementById('ng').value.trim(),t=document.getElementById('nt').value,u=document.getElementById('nu').value,s=parseInt(document.getElementById('ns').value)||0;
+  if(!c||!g||!t||!u){alert('Complete todos los campos');return;}
+  if(S.stock.find(i=>i.c===c)){alert('Ya existe ese código');return;}
+  S.stock.push({c,g,t,u,s});save();closeModal('mnew');
+  ['nc','ng'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('ns').value='0';document.getElementById('nt').value='';document.getElementById('nu').value='';
+  rStock();rStats();alert2('Ítem '+c+' agregado','s');
+  if(DC)syncDrive();
+}
+
+// PHOTOS
+function handlePhotos(inp){
+  const files=[...inp.files];
+  if(photos.length+files.length>5){alert2('Máximo 5 fotos','w');return;}
+  files.forEach(f=>{const r=new FileReader();r.onload=e=>{photos.push(e.target.result);rPG();};r.readAsDataURL(f);});
+  inp.value='';
+}
+function rPG(){
+  document.getElementById('pgrid').innerHTML=photos.map((s,i)=>`<div class="pth"><img src="${s}"><button class="dp" onclick="remP(${i})">✕</button></div>`).join('');
+  document.getElementById('pua').style.display=photos.length>=5?'none':'flex';
+}
+function remP(i){photos.splice(i,1);rPG();}
+
+// DESPACHO items
+let DIs=[{c:'',g:'',qty:1,u:''}];
+function rDI(){
+  document.getElementById('di').innerHTML=DIs.map((it,i)=>`
+    <div class="ri">
+      <div class="fgi acw" style="flex:1.2;min-width:120px">${i===0?'<label>Código</label>':''}
+        <input type="text" value="${it.c}" placeholder="Código..." oninput="uDC(${i},this.value)" onblur="hAC('dac${i}')" onfocus="sDC(${i})">
+        <div class="acl" id="dac${i}" style="display:none"></div>
+      </div>
+      <div class="fgi" style="flex:2;min-width:140px">${i===0?'<label>Glosa / Descripción</label>':''}
+        <input type="text" value="${it.g}" readonly style="background:#f8f7f4;color:#666">
+      </div>
+      <div class="fgi" style="flex:0.45;min-width:70px">${i===0?'<label>Cantidad</label>':''}
+        <input type="number" min="1" value="${it.qty}" oninput="DIs[${i}].qty=parseInt(this.value)||1">
+      </div>
+      <div class="fgi" style="flex:0.55;min-width:65px">${i===0?'<label>Unidad</label>':''}
+        <input type="text" value="${it.u}" readonly style="background:#f8f7f4;color:#888">
+      </div>
+      <div style="${i===0?'padding-top:18px':''}"><button class="btn bs bd" onclick="remDI(${i})"><i class="ti ti-trash"></i></button></div>
+    </div>`).join('');
+}
+function uDC(i,v){
+  DIs[i].c=v;const m=S.stock.find(s=>s.c.toLowerCase()===v.toLowerCase());
+  DIs[i].g=m?m.g:'';DIs[i].u=m?m.u:'';
+  const ac=document.getElementById('dac'+i);
+  if(!v){ac.style.display='none';return;}
+  const opts=S.stock.filter(s=>s.c.toLowerCase().includes(v.toLowerCase())||s.g.toLowerCase().includes(v.toLowerCase()));
+  if(!opts.length){ac.style.display='none';return;}
+  ac.style.display='';
+  ac.innerHTML=opts.slice(0,6).map(o=>`<div class="aci" onmousedown="selDI(${i},\'${o.c}\',\'${o.g.replace(/'/g,'\'')}\',\'${o.u}'')"><strong>${o.c}</strong> — ${o.g} <span style="color:#aaa">(${o.s} ${o.u})</span></div>`).join('');
+}
+function sDC(i){uDC(i,DIs[i].c);}
+function selDI(i,c,g,u){DIs[i].c=c;DIs[i].g=g;DIs[i].u=u;document.getElementById('dac'+i).style.display='none';rDI();}
+function hAC(id){setTimeout(()=>{const e=document.getElementById(id);if(e)e.style.display='none';},200);}
+function addDI(){DIs.push({c:'',g:'',qty:1,u:''});rDI();}
+function remDI(i){if(DIs.length>1){DIs.splice(i,1);rDI();}}
+
+function saveD(){
+  const acta=document.getElementById('d-acta').value.trim();
+  const fecha=document.getElementById('d-fecha').value;
+  const deleg=document.getElementById('d-deleg').value.trim();
+  const entr=document.getElementById('d-entr').value.trim();
+  const recib=document.getElementById('d-recibe').value.trim();
+  const obs=document.getElementById('d-obs').value.trim();
+  if(!acta||!fecha||!deleg||!entr||!recib){alert('Complete todos los campos del encabezado.');return;}
+  if(DIs.some(i=>!i.c||!i.qty)){alert('Complete código y cantidad en todos los materiales.');return;}
+  const errs=[];
+  DIs.forEach(it=>{
+    const s=S.stock.find(x=>x.c===it.c);
+    if(!s)errs.push('Código '+it.c+' no existe en stock');
+    else if(s.s<it.qty)errs.push('Stock insuficiente para '+it.c+': disponible '+s.s+', solicitado '+it.qty);
+  });
+  if(errs.length){alert(errs.join('
+'));return;}
+  DIs.forEach(it=>{
+    const s=S.stock.find(x=>x.c===it.c);
+    s.s-=it.qty;
+    S.movs.push({fecha,tipo:'despacho',doc:acta,cod:it.c,glosa:it.g,qty:-it.qty,ref:entr+' → '+recib+' | '+deleg});
+  });
+  const rec={id:acta,fecha,deleg,entr,recib,obs,items:JSON.parse(JSON.stringify(DIs)),fotos:[...photos]};
+  S.desp.push(rec);save();
+  alert2('Despacho '+acta+' registrado.','s');
+  clearD();
+  setTimeout(()=>showPDFPreview(rec),300);
+  if(DC)syncDrive();
+}
+
+function clearD(){
+  ['d-acta','d-fecha','d-deleg','d-entr','d-recibe','d-obs'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('d-fecha').valueAsDate=new Date();
+  DIs=[{c:'',g:'',qty:1,u:''}];photos=[];rDI();rPG();
+}
+
+// PDF
+function buildPDFHtml(d){
+  const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fafaf8':'#fff'}"><td style="padding:7px 10px;border-bottom:.5px solid #eee;font-family:monospace;font-size:12px">${it.c}</td><td style="padding:7px 10px;border-bottom:.5px solid #eee">${it.g}</td><td style="padding:7px 10px;border-bottom:.5px solid #eee;text-align:right;font-weight:600">${it.qty}</td><td style="padding:7px 10px;border-bottom:.5px solid #eee;color:#666;font-size:12px">${it.u||'—'}</td></tr>`).join('');
+  const fotos=d.fotos&&d.fotos.length?`<div style="margin-top:22px"><div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #eee">Registro fotográfico</div><div style="display:flex;flex-wrap:wrap;gap:10px">${d.fotos.map((s,i)=>`<img src="${s}" style="width:148px;height:108px;object-fit:cover;border-radius:6px;border:.5px solid #ddd">`).join('')}</div></div>':'';
+  const fdate=d.fecha?new Date(d.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'}):' — ';
+  return`<div id="pdfdoc" style="font-family:Segoe UI,Arial,sans-serif;background:#fff;padding:36px 40px;max-width:660px;margin:0 auto;color:#1a1a1a">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid #1D9E75">
+    <div><div style="font-size:19px;font-weight:700;color:#0F6E56;letter-spacing:-.3px">ACTA DE ENTREGA DE MATERIALES</div><div style="font-size:11px;color:#aaa;margin-top:3px">Control de inventario — Inventarios Yuval</div></div>
+    <div style="background:#f0eeea;border-radius:6px;padding:7px 14px;text-align:right"><div style="font-size:10px;color:#999">N° Acta</div><div style="font-size:15px;font-weight:700;font-family:monospace;color:#0F6E56">${d.id}</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+    <div style="background:#f8f7f4;border-radius:6px;padding:9px 13px"><div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Fecha</div><div style="font-size:13px;font-weight:500;text-transform:capitalize">${fdate}</div></div>
+    <div style="background:#f8f7f4;border-radius:6px;padding:9px 13px"><div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Delegación</div><div style="font-size:13px;font-weight:500">${d.deleg}</div></div>
+    <div style="background:#f8f7f4;border-radius:6px;padding:9px 13px"><div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Entregado por</div><div style="font-size:13px;font-weight:500">${d.entr}</div></div>
+    <div style="background:#E1F5EE;border-radius:6px;padding:9px 13px;border:.5px solid #9FE1CB"><div style="font-size:10px;color:#0F6E56;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Recibido por</div><div style="font-size:13px;font-weight:600;color:#085041">${d.recib}</div></div>
+  </div>
+  ${d.obs?`<div style="background:#fff8e6;border:.5px solid #FAC775;border-radius:6px;padding:8px 12px;font-size:12px;color:#633806;margin-bottom:14px"><strong>Obs.:</strong> ${d.obs}</div>':''}
+  <div style="margin-bottom:18px">
+    <div style="font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px">Materiales despachados</div>
+    <table style="width:100%;border-collapse:collapse;border:.5px solid #ddd;border-radius:6px;overflow:hidden">
+      <thead><tr style="background:#0F6E56;color:#fff"><th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600">Código</th><th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600">Descripción</th><th style="padding:8px 10px;text-align:right;font-size:11px;font-weight:600">Cantidad</th><th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600">Unidad</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="text-align:right;margin-top:5px;font-size:11px;color:#888">Total: <strong>${d.items.length} ítem(s) — ${d.items.reduce((a,b)=>a+b.qty,0)} unidades</strong></div>
+  </div>
+  ${fotos}
+  <div style="margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:36px">
+    <div style="text-align:center"><div style="border-top:1.5px solid #333;padding-top:7px;margin-top:52px"><div style="font-size:12px;font-weight:600">${d.entr}</div><div style="font-size:11px;color:#666;margin-top:2px">Firma — Entrega</div></div></div>
+    <div style="text-align:center"><div style="border-top:1.5px solid #333;padding-top:7px;margin-top:52px"><div style="font-size:12px;font-weight:600">${d.recib}</div><div style="font-size:11px;color:#666;margin-top:2px">Firma — Recepción conforme</div></div></div>
+  </div>
+  <div style="margin-top:22px;padding-top:10px;border-top:.5px solid #eee;font-size:10px;color:#ccc;text-align:center">Generado por Inventarios Yuval • ${new Date().toLocaleString('es-CL')}</div>
+</div>`;
+}
+
+function showPDFPreview(d){
+  document.getElementById('ppc').innerHTML=buildPDFHtml(d);
+  pdfRec=d;
+  openModal('mpdf');
+}
+
+async function dlPDF(){
+  const el=document.getElementById('pdfdoc');
+  if(!el){alert('Error: sin documento');return;}
+  const btn=document.getElementById('dlbtn');
+  btn.textContent='Generando...';btn.disabled=true;
+  try{
+    const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const iw=210,ih=(canvas.height*iw)/canvas.width,ph=297;
+    if(ih<=ph){pdf.addImage(canvas.toDataURL('image/jpeg',.92),'JPEG',0,0,iw,ih);}
+    else{let pages=Math.ceil(ih/ph);for(let p=0;p<pages;p++){if(p>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',.92),'JPEG',0,-p*ph,iw,ih);}}
+    pdf.save('Acta_'+(pdfRec?pdfRec.id:'despacho')+'_'+new Date().toISOString().slice(0,10)+'.pdf');
+  }catch(e){alert('Error PDF: '+e.message);}
+  finally{btn.innerHTML='<i class="ti ti-download"></i> Descargar PDF';btn.disabled=false;}
+}
+
+// INGRESO items
+let IIs=[{c:'',g:'',qty:1}];
+function rII(){
+  document.getElementById('ii').innerHTML=IIs.map((it,i)=>`
+    <div class="ri">
+      <div class="fgi acw" style="flex:1.2;min-width:120px">${i===0?'<label>Código</label>':''}
+        <input type="text" value="${it.c}" placeholder="Código..." oninput="uIC(${i},this.value)" onblur="hAC('iac${i}')" onfocus="sIC(${i})">
+        <div class="acl" id="iac${i}" style="display:none"></div>
+      </div>
+      <div class="fgi" style="flex:2;min-width:140px">${i===0?'<label>Glosa / Descripción</label>':''}
+        <input type="text" value="${it.g}" placeholder="Desc. (si es nuevo)" oninput="IIs[${i}].g=this.value">
+      </div>
+      <div class="fgi" style="flex:0.5;min-width:70px">${i===0?'<label>Cantidad</label>':''}
+        <input type="number" min="1" value="${it.qty}" oninput="IIs[${i}].qty=parseInt(this.value)||1">
+      </div>
+      <div style="${i===0?'padding-top:18px':''}"><button class="btn bs bd" onclick="remII(${i})"><i class="ti ti-trash"></i></button></div>
+    </div>`).join('');
+}
+function uIC(i,v){
+  IIs[i].c=v;const m=S.stock.find(s=>s.c.toLowerCase()===v.toLowerCase());if(m)IIs[i].g=m.g;
+  const ac=document.getElementById('iac'+i);
+  if(!v){ac.style.display='none';return;}
+  const opts=S.stock.filter(s=>s.c.toLowerCase().includes(v.toLowerCase())||s.g.toLowerCase().includes(v.toLowerCase()));
+  if(!opts.length){ac.style.display='none';return;}
+  ac.style.display='';
+  ac.innerHTML=opts.slice(0,5).map(o=>`<div class="aci" onmousedown="selII(${i},\'${o.c}\',\'${o.g.replace(/'/g,'\'')}\')">${o.c} — ${o.g}</div>`).join('');
+}
+function sIC(i){uIC(i,IIs[i].c);}
+function selII(i,c,g){IIs[i].c=c;IIs[i].g=g;document.getElementById('iac'+i).style.display='none';rII();}
+function addII(){IIs.push({c:'',g:'',qty:1});rII();}
+function remII(i){if(IIs.length>1){IIs.splice(i,1);rII();}}
+
+function saveI(){
+  const guia=document.getElementById('i-guia').value.trim();
+  const fecha=document.getElementById('i-fecha').value;
+  const prov=document.getElementById('i-prov').value.trim()||'—';
+  if(!guia||!fecha){alert('Ingrese N° guía/factura y fecha.');return;}
+  if(IIs.some(i=>!i.c||!i.g||!i.qty)){alert('Complete código, glosa y cantidad.');return;}
+  IIs.forEach(it=>{
+    let s=S.stock.find(x=>x.c===it.c);
+    if(s){s.s+=it.qty;}else{S.stock.push({c:it.c,g:it.g,t:'Otro',u:'Unidad',s:it.qty});}
+    S.movs.push({fecha,tipo:'ingreso',doc:guia,cod:it.c,glosa:it.g,qty:it.qty,ref:prov});
+  });
+  save();alert2('Ingreso '+guia+' registrado','s');clearI();if(DC)syncDrive();
+}
+function clearI(){
+  ['i-guia','i-fecha','i-prov','i-obs'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('i-fecha').valueAsDate=new Date();IIs=[{c:'',g:'',qty:1}];rII();
+}
+
+// HISTORIAL
+function fh(f,el){document.querySelectorAll('.tpp').forEach(b=>b.classList.remove('a'));el.classList.add('a');rH(f);}
+function rH(f){
+  let movs=[...S.movs].filter(m=>f==='todos'||m.tipo===f).reverse();
+  const tb=document.getElementById('th');
+  if(!movs.length){tb.innerHTML='<tr><td colspan="8"><div class="empty"><i class="ti ti-history"></i><div>Sin movimientos</div></div></td></tr>';return;}
+  tb.innerHTML=movs.map(m=>{
+    const dr=m.tipo==='despacho'?S.desp.find(d=>d.id===m.doc):null;
+    const pb=dr?`<button class="btn bs" onclick='showPDFPreview('+JSON.stringify(dr).replace(/'/g,"&apos;")+')' title="Ver acta PDF"><i class="ti ti-file-download"></i></button>':' — ';
+    return`<tr><td>${m.fecha}</td><td>${m.tipo==='despacho'?'<span class="bga">Despacho</span>':'<span class="bgt">Ingreso</span>'}</td><td><span class="tag">${m.doc}</span></td><td><span class="tag">${m.cod}</span></td><td>${m.glosa}</td><td style="text-align:right;font-weight:500;color:${m.qty<0?'var(--r4)':'var(--t6)''}">${m.qty>0?'+':''}${m.qty}</td><td style="color:#999;font-size:12px">${m.ref}</td><td>${pb}</td></tr>`;
+  }).join('');
+}
+
+function exportCSV(){
+  const h='Fecha,Tipo,Documento,Código,Glosa,Cantidad,Referencia';
+  const rows=S.movs.map(m=>`${m.fecha},${m.tipo},${m.doc},${m.cod},"${m.glosa}",${m.qty},"${m.ref}"`);
+  const b=new Blob([h+'
+'+rows.join('
+')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='inventario.csv';a.click();
+}
+
+// GOOGLE DRIVE
+function toggleDrive(){
+  if(DC){DC=false;DT=null;document.getElementById('dbtn').classList.remove('on');document.getElementById('dlbl').textContent='Conectar Google Drive';alert2('Desconectado','i');return;}
+  const cid=prompt('Ingrese Client ID de Google API
+(Ver pestaña Configurar Drive para instrucciones)');
+  if(!cid)return;
+  const sc='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+  const url=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(window.location.origin)}&response_type=token&scope=${encodeURIComponent(sc)}&prompt=consent`;
+  const p=window.open(url,'gauth','width=520,height=620,menubar=no,toolbar=no');
+  const ck=setInterval(()=>{
+    try{
+      if(p.closed){clearInterval(ck);return;}
+      const h=p.location.hash;
+      if(h&&h.includes('access_token')){
+        const t=new URLSearchParams(h.substring(1)).get('access_token');
+        if(t){DT=t;DC=true;p.close();clearInterval(ck);document.getElementById('dbtn').classList.add('on');document.getElementById('dlbl').textContent='✓ Drive conectado';alert2('Google Drive conectado','s');syncDrive();}
+      }
+    }catch(e){}
+  },600);
+}
+
+async function syncDrive(){
+  if(!DT)return;
+  try{
+    const sv=[['Código','Glosa','Tipo','Unidad','Stock'],...S.stock.map(i=>[i.c,i.g,i.t,i.u,i.s])];
+    const mv=[['Fecha','Tipo','Documento','Código','Glosa','Cantidad','Ref'],...S.movs.map(m=>[m.fecha,m.tipo,m.doc,m.cod,m.glosa,m.qty,m.ref])];
+    const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets',{method:'POST',headers:{'Authorization':`Bearer ${DT}`,'Content-Type':'application/json'},body:JSON.stringify({properties:{title:SNAME},sheets:[{properties:{title:'Stock'}},{properties:{title:'Movimientos'}}]})});
+    if(!r.ok){alert2('Drive error: '+r.status,'w');return;}
+    const sh=await r.json();const id=sh.spreadsheetId;
+    await Promise.all([
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/Stock!A1?valueInputOption=RAW`,{method:'PUT',headers:{'Authorization':`Bearer ${DT}`,'Content-Type':'application/json'},body:JSON.stringify({values:sv})}),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/Movimientos!A1?valueInputOption=RAW`,{method:'PUT',headers:{'Authorization':`Bearer ${DT}`,'Content-Type':'application/json'},body:JSON.stringify({values:mv})})
+    ]);
+    alert2('Sincronizado con Google Sheets ✓','s');
+  }catch(e){alert2('Error sync: '+e.message,'w');}
+}
+
+function alert2(msg,t){
+  const a=document.getElementById('alert-area');if(!a)return;
+  const ic=t==='s'?'circle-check':t==='w'?'alert-triangle':'info-circle';
+  const cls=t==='s'?'as':t==='w'?'aw':'ai';
+  a.innerHTML=`<div class="al2 ${cls}"><i class="ti ti-${ic}"></i>${msg}</div>`;
+  setTimeout(()=>{if(a)a.innerHTML='';},4500);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  rStats();rStock();
+  document.getElementById('d-fecha').valueAsDate=new Date();
+  document.getElementById('i-fecha').valueAsDate=new Date();
+  rDI();rII();
+  const da=document.getElementById('pua');
+  if(da){
+    da.addEventListener('dragover',e=>{e.preventDefault();da.style.borderColor='var(--t4)';});
+    da.addEventListener('dragleave',()=>{da.style.borderColor='';});
+    da.addEventListener('drop',e=>{
+      e.preventDefault();da.style.borderColor='';
+      const fs=[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'));
+      if(photos.length+fs.length>5){alert2('Máximo 5 fotos','w');return;}
+      fs.forEach(f=>{const r=new FileReader();r.onload=ev=>{photos.push(ev.target.result);rPG();};r.readAsDataURL(f);});
+    });
+  }
+});
+</script>
+</body>
+</html>
