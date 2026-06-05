@@ -243,6 +243,7 @@ tbody tr:hover td{background:#fafbfc}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="exportStockCSV()"><i class="ti ti-download"></i> Exportar CSV</button>
       <button class="btn btn-ghost btn-sm" onclick="descargarPlantilla()"><i class="ti ti-table-export"></i> Plantilla Excel</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="limpiarStock()"><i class="ti ti-trash"></i> Limpiar stock</button>
       <button class="btn btn-accent btn-sm" onclick="openM('m-import')"><i class="ti ti-file-upload"></i> Importar stock</button>
       <button class="btn btn-primary" onclick="openM('m-newitem')"><i class="ti ti-plus"></i> Nuevo material</button>
     </div>
@@ -586,6 +587,8 @@ function dbSave() {
   localStorage.setItem("yv2_desp",  JSON.stringify(DB.desp));
 }
 function dbSeed() {
+  // Solo carga demo si nunca se ha usado la app (sin flag de inicialización)
+  if (localStorage.getItem("yv2_init")) return;
   if (DB.stock.length) return;
   DB.stock = [
     {c:"MAT-001",g:"Cable XLPE 4x16mm²",t:"Material eléctrico",u:"Metro",s:240,min:20},
@@ -599,6 +602,7 @@ function dbSeed() {
     {c:"CON-001",g:"Cinta autofundente 25mm",t:"Consumible",u:"Rollo",s:22,min:10},
     {c:"CON-002",g:"Spray limpiador contactos",t:"Consumible",u:"Unidad",s:5,min:6}
   ];
+  localStorage.setItem("yv2_init","1");
   dbSave();
 }
 
@@ -820,6 +824,14 @@ function delItem(idx) {
   if(!confirm("¿Eliminar "+DB.stock[idx].g+"?\nEsta acción no se puede deshacer.")) return;
   DB.stock.splice(idx,1); dbSave(); renderStock(); renderStockPills();
   showAlert("Material eliminado","s");
+}
+
+function limpiarStock() {
+  if(!confirm("¿Eliminar TODOS los materiales del catálogo?\n\nEsto borra el stock completo pero NO afecta el historial de movimientos.\n\nEsta acción no se puede deshacer.")) return;
+  DB.stock = [];
+  localStorage.setItem("yv2_init","1"); // evita que el demo vuelva a cargar
+  dbSave(); renderStock(); renderStockPills(); renderDashboard();
+  showAlert("Stock limpiado. Ahora puede importar su inventario.","i");
 }
 
 function exportStockCSV() {
