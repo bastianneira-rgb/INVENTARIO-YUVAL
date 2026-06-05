@@ -299,7 +299,7 @@ tbody tr:hover td{background:#fafbfc}
 
   <div class="factions">
     <button class="btn" onclick="clearDespacho()"><i class="ti ti-refresh"></i> Limpiar</button>
-    <button class="btn btn-primary" onclick="saveDespacho()"><i class="ti ti-device-floppy"></i> Registrar despacho</button>
+    <button class="btn btn-primary" onclick="saveDespacho()"><i class="ti ti-device-floppy"></i> Registrar y generar PDF</button>
   </div>
 </div>
 
@@ -811,12 +811,22 @@ function renderDRows() {
 function onDInput(inp) {
   var i=+inp.dataset.i, v=inp.value;
   dRows[i].c=v;
+  // Coincidencia exacta: autocompleta glosa y unidad en tiempo real
   var m=DB.stock.filter(function(s){return s.c.toLowerCase()===v.toLowerCase();})[0];
-  dRows[i].g=m?m.g:""; dRows[i].u=m?m.u:"";
+  if(m){ dRows[i].g=m.g; dRows[i].u=m.u; }
+  else { dRows[i].g=""; dRows[i].u=""; }
+  // Actualizar los campos readonly visualmente sin re-renderizar todo
+  var row=inp.closest(".acrow");
+  if(row){
+    var inputs=row.querySelectorAll("input");
+    // inputs[1]=glosa readonly, inputs[3]=unidad readonly
+    if(inputs[1]) inputs[1].value=dRows[i].g;
+    if(inputs[3]) inputs[3].value=dRows[i].u;
+  }
   showACSugg("dac-"+i, v, function(o){ selDRow(i,o.c,o.g,o.u); });
 }
 function onDFocus(inp){ onDInput(inp); }
-function selDRow(i,c,g,u){dRows[i].c=c;dRows[i].g=g;dRows[i].u=u;hideAC("dac-"+i);renderDRows();}
+function selDRow(i,c,g,u){dRows[i].c=c;dRows[i].g=g;dRows[i].u=u;renderDRows();}
 
 // ---- INGRESO ROWS ----
 function initIRows(){ iRows=[{c:"",g:"",qty:1,u:"",estado:"Nuevo"}]; }
@@ -862,12 +872,20 @@ function onIInput(inp) {
   iRows[i].c=v;
   var m=DB.stock.filter(function(s){return s.c.toLowerCase()===v.toLowerCase();})[0];
   if(m){ iRows[i].g=m.g; iRows[i].u=m.u; }
+  // Actualizar glosa visualmente si hay coincidencia exacta
+  var row=inp.closest(".acrow");
+  if(row && m){
+    var iglosa=row.querySelector(".iglosa");
+    if(iglosa){ iglosa.value=m.g; }
+  }
   showACSugg("iac-"+i, v, function(o){ selIRow(i,o.c,o.g,o.u); });
 }
 function onIFocus(inp){ onIInput(inp); }
 function selIRow(i,c,g,u){iRows[i].c=c;iRows[i].g=g;iRows[i].u=u;hideAC("iac-"+i);renderIRows();}
 
 // ---- AUTOCOMPLETE SHARED ----
+// Guardamos callbacks indexados para evitar serialización de funciones/objetos con caracteres especiales
+var _acCallbacks = {};
 function showACSugg(acId, val, selectFn) {
   var ac=document.getElementById(acId); if(!ac) return;
   if(!val){ ac.style.display="none"; return; }
@@ -875,17 +893,25 @@ function showACSugg(acId, val, selectFn) {
     return s.c.toLowerCase().indexOf(val.toLowerCase())>=0 || s.g.toLowerCase().indexOf(val.toLowerCase())>=0;
   });
   if(!opts.length){ ac.style.display="none"; return; }
+  // Registrar callback por acId
+  _acCallbacks[acId] = { fn: selectFn, opts: opts };
   var h="";
   var max=opts.length>7?7:opts.length;
   for(var j=0;j<max;j++){
     var o=opts[j];
-    h+='<div class="acitem" onmousedown="void(0)" onclick="('+selectFn.toString()+')('+JSON.stringify(o)+')">'+
+    h+='<div class="acitem" onmousedown="event.preventDefault()" onclick="_acSelect(\''+acId+'\','+j+')">'+
       '<span class="ac-code">'+o.c+'</span>'+
       '<span class="ac-glosa">'+o.g+'</span>'+
-      '<span class="ac-stock">Stock: '+o.s+' '+o.u+'</span>'+
+      '<span class="ac-stock">Stock disponible: '+o.s+' '+o.u+'</span>'+
     '</div>';
   }
   ac.innerHTML=h; ac.style.display="";
+}
+function _acSelect(acId, j){
+  var cb=_acCallbacks[acId]; if(!cb) return;
+  var o=cb.opts[j];
+  cb.fn(o);
+  document.getElementById(acId).style.display="none";
 }
 function hideAC(id){ setTimeout(function(){ var el=document.getElementById(id); if(el) el.style.display="none"; },200); }
 
@@ -911,12 +937,15 @@ function saveDespacho() {
     st.s-=row.qty;
     DB.movs.push({fecha:fecha,tipo:"despacho",doc:acta,cod:row.c,glosa:row.g,qty:row.qty,ref:entr+" → "+recib,deleg:deleg,estado:"Entregado"});
   });
-  var rec={id:acta,fecha:fecha,deleg:deleg,entr:entr,recib:recib,obs:obs,items:JSON.parse(JSON.stringify(dRows)),fotos:photos.slice()};
+  // Guardamos fotos y record ANTES de limpiar el formulario
+  var recFotos = photos.slice();
+  var rec={id:acta,fecha:fecha,deleg:deleg,entr:entr,recib:recib,obs:obs,items:JSON.parse(JSON.stringify(dRows)),fotos:recFotos};
   DB.desp.push(rec);
   dbSave();
-  showAlert("Despacho "+acta+" registrado correctamente","s");
   clearDespacho();
-  setTimeout(function(){showPDF(rec);},400);
+  showAlert("Despacho "+acta+" registrado. Abriendo acta PDF...","s");
+  // Mostrar PDF inmediatamente con el record guardado
+  showPDF(rec);
   if(syncOn) syncSheets();
 }
 
@@ -1097,8 +1126,16 @@ function buildPDFHtml(d) {
 }
 
 function showPDF(d){
-  document.getElementById("pdf-preview").innerHTML=buildPDFHtml(d);
-  pdfRec=d;
+  var preview = document.getElementById("pdf-preview");
+  if(!preview) return;
+  preview.innerHTML = buildPDFHtml(d);
+  pdfRec = d;
+  // Actualizar título del modal con N° acta y fotos
+  var titulo = document.querySelector("#m-pdf .mhead-title");
+  if(titulo){
+    var fotoInfo = (d.fotos && d.fotos.length) ? ' <span style="font-size:11px;color:var(--text2);font-weight:400">('+d.fotos.length+' foto'+(d.fotos.length>1?'s':'')+' incluida'+(d.fotos.length>1?'s':'')+')</span>' : '';
+    titulo.innerHTML = '<i class="ti ti-file-text"></i> Acta '+d.id + fotoInfo;
+  }
   openM("m-pdf");
 }
 
