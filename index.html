@@ -111,7 +111,7 @@ tr:hover td{background:#fafaf8}
 <div class="app">
 <div class="hdr">
   <div class="logo"><i class="ti ti-package"></i><span>Inventarios Yuval</span><span class="logo-s">— Control de Stock</span></div>
-  <button class="dbtn" id="dbtn" onclick="toggleDrive()"><i class="ti ti-brand-google-drive"></i><span id="dlbl">Conectar Google Drive</span></button>
+  <button class="dbtn" id="dbtn" onclick="toggleDrive()"><i class="ti ti-brand-google-drive"></i><span id="dlbl">Sincronizar con Sheets</span></button>
 </div>
 <div class="nav">
   <div class="nt a" onclick="showTab('stock')" id="tab-stock"><i class="ti ti-database"></i> Base de stock</div>
@@ -193,16 +193,15 @@ tr:hover td{background:#fafaf8}
 
 <!-- DRIVE GUIDE -->
 <div id="panel-dguide" style="display:none">
-  <div class="sh"><div class="st"><i class="ti ti-brand-google-drive"></i> Cómo configurar Google Drive / Sheets</div></div>
+  <div class="sh"><div class="st"><i class="ti ti-brand-google-drive"></i> Conexión con Google Sheets</div></div>
   <div class="card">
-    <p style="font-size:13px;color:#666;margin-bottom:1.25rem;line-height:1.7">La sincronización usa la <strong>Google Sheets API</strong>. Al registrar cada despacho o ingreso, el stock y los movimientos se actualizan automáticamente en una hoja de cálculo en su Google Drive. Configure esto una sola vez:</p>
-    <div class="gs"><div class="gn">1</div><div class="gb"><div class="gt">Crear proyecto en Google Cloud Console</div><div class="gd">Vaya a <strong>console.cloud.google.com</strong> → clic en "Seleccionar proyecto" (arriba) → <strong>Nuevo proyecto</strong>. Asigne un nombre (ej: Inventarios Yuval) y créelo.</div></div></div>
-    <div class="gs"><div class="gn">2</div><div class="gb"><div class="gt">Habilitar APIs</div><div class="gd">Menú lateral → <strong>APIs y servicios → Biblioteca</strong>. Busque y habilite:<br>• <strong>Google Sheets API</strong><br>• <strong>Google Drive API</strong></div></div></div>
-    <div class="gs"><div class="gn">3</div><div class="gb"><div class="gt">Crear credenciales OAuth 2.0</div><div class="gd"><strong>APIs y servicios → Credenciales → Crear credenciales → ID de cliente de OAuth</strong><br>Tipo: <strong>Aplicación web</strong><br>En "Orígenes de JavaScript autorizados" agregue la URL donde abre esta app.<br>Copie el <strong>Client ID</strong> que termina en <code>.apps.googleusercontent.com</code></div></div></div>
-    <div class="gs"><div class="gn">4</div><div class="gb"><div class="gt">Pantalla de consentimiento OAuth</div><div class="gd">Si se lo solicita: seleccione <strong>Externo</strong>, complete nombre y correo, en Scopes agregue <code>spreadsheets</code> y <code>drive.file</code>. En "Usuarios de prueba" agregue su correo Gmail.</div></div></div>
-    <div class="gs"><div class="gn">5</div><div class="gb"><div class="gt">Conectar en Inventarios Yuval</div><div class="gd">Clic en <strong>"Conectar Google Drive"</strong> (barra superior) → ingrese el Client ID → autorice en la ventana de Google. El botón mostrará <em>✓ Drive conectado</em>.</div></div></div>
-    <div style="background:var(--a50);border:.5px solid #FAC775;border-radius:8px;padding:12px 16px;font-size:12px;color:var(--a8);margin-top:.5rem">
-      <strong>Importante:</strong> Si usa el archivo directamente (doble clic en el .html), el origen es <code>null</code> y el OAuth no funcionará. Sirva el archivo con:<div class="cb">python3 -m http.server 8080</div>Luego abra <strong>http://localhost:8080</strong> y use ese URL en las credenciales de Google Cloud.
+    <p style="font-size:13px;color:#666;margin-bottom:1.25rem;line-height:1.7">La app sincroniza directamente con la hoja <strong>Inventarios Yuval</strong> en Google Drive via Apps Script. No requiere Google Cloud ni tarjeta de crédito.</p>
+    <div class="gs"><div class="gn">1</div><div class="gb"><div class="gt">Activar sincronización</div><div class="gd">Haga clic en el botón <strong>"Sincronizar con Sheets"</strong> en la barra superior. Se activará de inmediato y sincronizará stock y movimientos.</div></div></div>
+    <div class="gs"><div class="gn">2</div><div class="gb"><div class="gt">Verificar en Google Sheets</div><div class="gd">Abra la hoja <strong>Inventarios Yuval</strong> en su Google Drive. Verá dos pestañas actualizadas: <strong>Stock</strong> (catálogo completo con cantidades) y <strong>Movimientos</strong> (historial de despachos e ingresos).</div></div></div>
+    <div class="gs"><div class="gn">3</div><div class="gb"><div class="gt">Sincronización automática</div><div class="gd">Cada vez que registre un despacho o ingreso, los datos se envían automáticamente a Google Sheets. También puede sincronizar manualmente haciendo clic en el botón.</div></div></div>
+    <div style="background:var(--g50);border:.5px solid #C0DD97;border-radius:8px;padding:12px 16px;font-size:12px;color:var(--g6);margin-top:.5rem">
+      <strong>✓ Configuración completada.</strong> La hoja conectada es:<br>
+      <span style="font-family:monospace;font-size:11px">https://docs.google.com/spreadsheets/d/1tOzTOAHux8WYDkXjH-8AhOy-3DhionpnBcyczEaf0iY/edit</span>
     </div>
   </div>
 </div>
@@ -511,41 +510,42 @@ function exportCSV(){
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='inventario.csv';a.click();
 }
 
-// GOOGLE DRIVE
+// GOOGLE SHEETS via Apps Script
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWjBmsISTdQ0L8PJI0DHR0CIbH7Lg7TkseyeDosH27uVNsTutYv8QKb8PU_eMStDJR/exec";
+
 function toggleDrive(){
-  if(DC){DC=false;DT=null;document.getElementById('dbtn').classList.remove('on');document.getElementById('dlbl').textContent='Conectar Google Drive';alert2('Desconectado','i');return;}
-  const cid=prompt('Ingrese Client ID de Google API
-(Ver pestaña Configurar Drive para instrucciones)');
-  if(!cid)return;
-  const sc='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-  const url=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(window.location.origin)}&response_type=token&scope=${encodeURIComponent(sc)}&prompt=consent`;
-  const p=window.open(url,'gauth','width=520,height=620,menubar=no,toolbar=no');
-  const ck=setInterval(()=>{
-    try{
-      if(p.closed){clearInterval(ck);return;}
-      const h=p.location.hash;
-      if(h&&h.includes('access_token')){
-        const t=new URLSearchParams(h.substring(1)).get('access_token');
-        if(t){DT=t;DC=true;p.close();clearInterval(ck);document.getElementById('dbtn').classList.add('on');document.getElementById('dlbl').textContent='✓ Drive conectado';alert2('Google Drive conectado','s');syncDrive();}
-      }
-    }catch(e){}
-  },600);
+  if(DC){
+    DC=false;
+    document.getElementById('dbtn').classList.remove('on');
+    document.getElementById('dlbl').textContent='Sincronizar Sheets';
+    alert2('Sincronización desactivada','i');
+    return;
+  }
+  DC=true;
+  document.getElementById('dbtn').classList.add('on');
+  document.getElementById('dlbl').textContent='✓ Sheets conectado';
+  alert2('Google Sheets conectado. Sincronizando...','s');
+  syncDrive();
 }
 
 async function syncDrive(){
-  if(!DT)return;
+  if(!DC) return;
   try{
-    const sv=[['Código','Glosa','Tipo','Unidad','Stock'],...S.stock.map(i=>[i.c,i.g,i.t,i.u,i.s])];
-    const mv=[['Fecha','Tipo','Documento','Código','Glosa','Cantidad','Ref'],...S.movs.map(m=>[m.fecha,m.tipo,m.doc,m.cod,m.glosa,m.qty,m.ref])];
-    const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets',{method:'POST',headers:{'Authorization':`Bearer ${DT}`,'Content-Type':'application/json'},body:JSON.stringify({properties:{title:SNAME},sheets:[{properties:{title:'Stock'}},{properties:{title:'Movimientos'}}]})});
-    if(!r.ok){alert2('Drive error: '+r.status,'w');return;}
-    const sh=await r.json();const id=sh.spreadsheetId;
-    await Promise.all([
-      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/Stock!A1?valueInputOption=RAW`,{method:'PUT',headers:{'Authorization':`Bearer ${DT}`,'Content-Type':'application/json'},body:JSON.stringify({values:sv})}),
-      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/Movimientos!A1?valueInputOption=RAW`,{method:'PUT',headers:{'Authorization':`Bearer ${DT}`,'Content-Type':'application/json'},body:JSON.stringify({values:mv})})
-    ]);
+    const sv=[['Código','Glosa','Tipo','Unidad','Stock en bodega'],...S.stock.map(i=>[i.c,i.g,i.t,i.u,i.s])];
+    const mv=[['Fecha','Tipo','Documento','Código','Glosa','Cantidad','Referencia'],...S.movs.map(m=>[m.fecha,m.tipo,m.doc,m.cod,m.glosa,m.qty,m.ref])];
+
+    await fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify({type:'stock', rows:sv})
+    });
+    await fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify({type:'movimientos', rows:mv})
+    });
     alert2('Sincronizado con Google Sheets ✓','s');
-  }catch(e){alert2('Error sync: '+e.message,'w');}
+  }catch(e){
+    alert2('Error al sincronizar: '+e.message,'w');
+  }
 }
 
 function alert2(msg,t){
