@@ -191,6 +191,13 @@ tbody tr:hover td{background:#fafbfc}
 <body>
 <div class="app">
 
+<!-- Banner de carga -->
+<div id="loading-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:#1a6b4a;color:#fff;padding:10px 20px;font-size:13px;font-weight:500;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.3)">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+  Cargando datos desde Google Sheets...
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
 <!-- ===== HEADER ===== -->
 <div class="header">
   <div class="hlogo">
@@ -566,44 +573,116 @@ tbody tr:hover td{background:#fafbfc}
 //  INVENTARIOS YUVAL — Motor principal
 // ============================================================
 
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWjBmsISTdQ0L8PJI0DHR0CIbH7Lg7TkseyeDosH27uVNsTutYv8QKb8PU_eMStDJR/exec";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOpcHdXyd73IM1SKVsC0kETG5mY8jiuYnIhV6H4DXkzjG6eSPjk1vd8Q8b-fEmxsXx/exec";
 var syncOn = false;
 var photos = [];
 var pdfRec = null;
 var dRows = [];
 var iRows = [];
 
-// ---- BASE DE DATOS LOCAL ----
+// ---- BASE DE DATOS (Google Sheets como fuente de verdad) ----
 var DB = { stock: [], movs: [], desp: [] };
+var _sheetsLoaded = false;
+
+function dbSave() {
+  // Persistir localmente como cache
+  localStorage.setItem("yv2_stock", JSON.stringify(DB.stock));
+  localStorage.setItem("yv2_movs",  JSON.stringify(DB.movs));
+  localStorage.setItem("yv2_desp",  JSON.stringify(DB.desp));
+  // Siempre sincronizar con Sheets
+  syncSheets();
+}
 
 function dbLoad() {
+  // Cargar cache local mientras llegan los datos de Sheets
   try { DB.stock = JSON.parse(localStorage.getItem("yv2_stock") || "[]"); } catch(e){ DB.stock=[]; }
   try { DB.movs  = JSON.parse(localStorage.getItem("yv2_movs")  || "[]"); } catch(e){ DB.movs=[]; }
   try { DB.desp  = JSON.parse(localStorage.getItem("yv2_desp")  || "[]"); } catch(e){ DB.desp=[]; }
 }
-function dbSave() {
-  localStorage.setItem("yv2_stock", JSON.stringify(DB.stock));
-  localStorage.setItem("yv2_movs",  JSON.stringify(DB.movs));
-  localStorage.setItem("yv2_desp",  JSON.stringify(DB.desp));
+
+function dbLoadFromSheets(callback) {
+  showLoadingBanner(true);
+  fetch(SCRIPT_URL)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data.ok){ console.warn("Sheets error:", data.error); showLoadingBanner(false); if(callback) callback(); return; }
+
+      // Parsear stock: filas desde fila 2 (fila 1 = cabecera)
+      var rawStock = data.stock || [];
+      if(rawStock.length > 1){
+        DB.stock = [];
+        for(var i=1;i<rawStock.length;i++){
+          var r=rawStock[i];
+          if(!r[0]) continue; // skip empty rows
+          DB.stock.push({
+            c:  String(r[0]||""),
+            g:  String(r[1]||""),
+            t:  String(r[2]||"Otro"),
+            u:  String(r[3]||"Unidad"),
+            s:  parseInt(r[4])||0,
+            min:parseInt(r[5])||5
+          });
+        }
+      }
+
+      // Parsear movimientos: filas desde fila 2
+      var rawMovs = data.movimientos || [];
+      if(rawMovs.length > 1){
+        DB.movs = [];
+        for(var i=1;i<rawMovs.length;i++){
+          var r=rawMovs[i];
+          if(!r[0]) continue;
+          DB.movs.push({
+            fecha: String(r[0]||""),
+            tipo:  String(r[1]||""),
+            doc:   String(r[2]||""),
+            cod:   String(r[3]||""),
+            glosa: String(r[4]||""),
+            qty:   parseFloat(r[5])||0,
+            estado:String(r[6]||""),
+            ref:   String(r[7]||"")
+          });
+        }
+      }
+
+      // Parsear despachos (JSON guardado como string en celda A1)
+      try {
+        var despJson = data.despachos || "[]";
+        if(typeof despJson === "string" && despJson.trim().length > 2){
+          DB.desp = JSON.parse(despJson);
+        }
+      } catch(e){ DB.desp=[]; }
+
+      // Actualizar cache local
+      localStorage.setItem("yv2_stock", JSON.stringify(DB.stock));
+      localStorage.setItem("yv2_movs",  JSON.stringify(DB.movs));
+      localStorage.setItem("yv2_desp",  JSON.stringify(DB.desp));
+      _sheetsLoaded = true;
+      showLoadingBanner(false);
+      if(callback) callback();
+    })
+    .catch(function(e){
+      console.warn("No se pudo cargar desde Sheets:", e.message);
+      showLoadingBanner(false);
+      if(callback) callback();
+    });
 }
+
+function showLoadingBanner(show){
+  var el = document.getElementById("loading-banner");
+  if(el) el.style.display = show ? "flex" : "none";
+}
+
 function dbSeed() {
-  // Solo carga demo si nunca se ha usado la app (sin flag de inicialización)
-  if (localStorage.getItem("yv2_init")) return;
-  if (DB.stock.length) return;
+  if(DB.stock.length) return;
+  if(localStorage.getItem("yv2_init")) return;
   DB.stock = [
     {c:"MAT-001",g:"Cable XLPE 4x16mm²",t:"Material eléctrico",u:"Metro",s:240,min:20},
-    {c:"MAT-002",g:"Conector bimetálico 95mm²",t:"Material eléctrico",u:"Unidad",s:80,min:10},
-    {c:"MAT-003",g:"Transformador 100 KVA",t:"Material eléctrico",u:"Unidad",s:3,min:2},
     {c:"EPP-001",g:"Casco dieléctrico clase E",t:"EPP",u:"Unidad",s:15,min:5},
-    {c:"EPP-002",g:"Guante aislante clase 00",t:"EPP",u:"Par",s:3,min:5},
-    {c:"EPP-003",g:"Zapato dieléctrico",t:"EPP",u:"Par",s:8,min:4},
-    {c:"HER-001",g:"Llave torquímetro 3/4\"",t:"Herramienta",u:"Unidad",s:4,min:2},
-    {c:"HER-002",g:"Alicate universal 8\"",t:"Herramienta",u:"Unidad",s:12,min:4},
-    {c:"CON-001",g:"Cinta autofundente 25mm",t:"Consumible",u:"Rollo",s:22,min:10},
-    {c:"CON-002",g:"Spray limpiador contactos",t:"Consumible",u:"Unidad",s:5,min:6}
+    {c:"HER-001",g:"Llave torquímetro 3/4",t:"Herramienta",u:"Unidad",s:4,min:2},
+    {c:"CON-001",g:"Cinta autofundente 25mm",t:"Consumible",u:"Rollo",s:22,min:10}
   ];
   localStorage.setItem("yv2_init","1");
-  dbSave();
 }
 
 // ---- TABS ----
@@ -1511,15 +1590,16 @@ function toggleSync(){
 }
 
 function syncSheets(){
-  if(!syncOn) return;
-  var sv=[["Código","Glosa","Tipo","Unidad","Stock","Stock Mínimo"]];
+  var sv=[["Código","Glosa","Tipo","Unidad","Stock en bodega","Stock Mínimo"]];
   DB.stock.forEach(function(i){sv.push([i.c,i.g,i.t,i.u,i.s,i.min||5]);});
   var mv=[["Fecha","Tipo","Documento","Código","Glosa","Cantidad","Estado","Referencia"]];
   DB.movs.forEach(function(m){mv.push([m.fecha,m.tipo,m.doc,m.cod,m.glosa,m.qty,m.estado||"—",m.ref]);});
+  var despJson=JSON.stringify(DB.desp);
   fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({type:"stock",rows:sv})})
     .then(function(){ return fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({type:"movimientos",rows:mv})}); })
-    .then(function(){ showAlert("Google Sheets actualizado ✓","s"); })
-    .catch(function(e){ showAlert("Error al sincronizar: "+e.message,"w"); });
+    .then(function(){ return fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({type:"despachos",json:despJson})}); })
+    .then(function(){ if(syncOn) showAlert("Google Sheets actualizado ✓","s"); })
+    .catch(function(e){ if(syncOn) showAlert("Error al sincronizar: "+e.message,"w"); });
 }
 
 // ---- DRAG & DROP FOTOS ----
@@ -1537,9 +1617,16 @@ function initPhotoDrop(){
 
 // ---- INIT ----
 document.addEventListener("DOMContentLoaded",function(){
-  dbLoad(); dbSeed();
+  dbLoad(); // carga cache local inmediatamente para mostrar algo
   showTab("dashboard");
   initPhotoDrop();
+  // Luego carga desde Sheets (fuente de verdad) y refresca UI
+  dbLoadFromSheets(function(){
+    dbSeed();
+    renderDashboard();
+    renderStock();
+    renderStockPills();
+  });
 
   // Drag & drop zona de importación
   var idrop = document.getElementById("import-drop");
