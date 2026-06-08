@@ -351,17 +351,11 @@ tbody tr:hover td{background:#fafbfc}
     <div class="fpills" id="mov-pills" style="margin:0"></div>
     <div class="searchbar" style="margin:0;flex:1;min-width:200px">
       <i class="ti ti-search"></i>
-      <input type="text" id="q-movs" placeholder="Buscar por código, glosa, documento..." oninput="renderMovs()">
+      <input type="text" id="q-movs" placeholder="Buscar por documento, responsable..." oninput="renderMovs()">
     </div>
   </div>
-  <div class="tw">
-    <table>
-      <thead>
-        <tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Código</th><th>Glosa</th><th style="text-align:right">Cant.</th><th>Estado</th><th>Responsable</th><th>PDF</th><th></th></tr>
-      </thead>
-      <tbody id="tbody-movs"></tbody>
-    </table>
-  </div>
+  <!-- Vista: lista de documentos (agrupados) -->
+  <div id="docs-list"></div>
 </div>
 
 </div><!-- /main -->
@@ -541,6 +535,81 @@ tbody tr:hover td{background:#fafbfc}
         <button class="btn btn-primary" id="import-confirm-btn" style="display:none" onclick="confirmarImport()">
           <i class="ti ti-check"></i> <span id="import-confirm-txt">Cargar al inventario</span>
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal: detalle documento -->
+<div id="m-doc-detail" style="display:none">
+  <div class="moverlay" onclick="if(event.target.classList.contains('moverlay'))closeM('m-doc-detail')">
+    <div class="modal modal-wide">
+      <div class="mhead">
+        <div class="mhead-title" id="doc-detail-title"><i class="ti ti-file-description"></i> Detalle del documento</div>
+        <button class="mclose" onclick="closeM('m-doc-detail')">×</button>
+      </div>
+      <div class="mbody" id="doc-detail-body"></div>
+      <div class="mfoot" id="doc-detail-foot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: editar despacho -->
+<div id="m-edit-desp" style="display:none">
+  <div class="moverlay" onclick="if(event.target.classList.contains('moverlay'))closeM('m-edit-desp')">
+    <div class="modal modal-wide">
+      <div class="mhead">
+        <div class="mhead-title"><i class="ti ti-edit"></i> Editar acta de despacho</div>
+        <button class="mclose" onclick="closeM('m-edit-desp')">×</button>
+      </div>
+      <div class="mbody">
+        <input type="hidden" id="ed-despidx">
+        <div class="fgrid">
+          <div class="fgroup"><span class="flabel">N° Acta</span><input type="text" id="ed-id" readonly style="background:var(--surface2);color:var(--text2)"></div>
+          <div class="fgroup"><span class="flabel">Fecha</span><input type="date" id="ed-fecha"></div>
+          <div class="fgroup"><span class="flabel">Delegación</span><input type="text" id="ed-deleg"></div>
+          <div class="fgroup"><span class="flabel">Responsable / Entrega</span><input type="text" id="ed-entr"></div>
+          <div class="fgroup full"><span class="flabel">Quien recibe</span><input type="text" id="ed-recibe"></div>
+          <div class="fgroup full"><span class="flabel">Observaciones</span><textarea id="ed-obs" rows="2"></textarea></div>
+        </div>
+        <div class="sep"></div>
+        <div class="card-title" style="margin-bottom:10px"><i class="ti ti-list-check"></i> Materiales</div>
+        <div id="ed-items-wrap"></div>
+        <button class="btn btn-ghost" style="margin-top:6px" onclick="addEdDRow()"><i class="ti ti-plus"></i> Agregar material</button>
+      </div>
+      <div class="mfoot">
+        <button class="btn" onclick="closeM('m-edit-desp')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveEditDesp()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: editar ingreso -->
+<div id="m-edit-ing" style="display:none">
+  <div class="moverlay" onclick="if(event.target.classList.contains('moverlay'))closeM('m-edit-ing')">
+    <div class="modal modal-wide">
+      <div class="mhead">
+        <div class="mhead-title"><i class="ti ti-edit"></i> Editar ingreso</div>
+        <button class="mclose" onclick="closeM('m-edit-ing')">×</button>
+      </div>
+      <div class="mbody">
+        <input type="hidden" id="ei2-docid">
+        <div class="fgrid">
+          <div class="fgroup"><span class="flabel">N° Guía / Factura</span><input type="text" id="ei2-doc" readonly style="background:var(--surface2);color:var(--text2)"></div>
+          <div class="fgroup"><span class="flabel">Fecha</span><input type="date" id="ei2-fecha"></div>
+          <div class="fgroup"><span class="flabel">Responsable</span><input type="text" id="ei2-resp"></div>
+          <div class="fgroup"><span class="flabel">Proveedor</span><input type="text" id="ei2-prov"></div>
+        </div>
+        <div class="sep"></div>
+        <div class="card-title" style="margin-bottom:10px"><i class="ti ti-list-check"></i> Materiales</div>
+        <div id="ei2-items-wrap"></div>
+        <button class="btn btn-ghost" style="margin-top:6px" onclick="addEiRow()"><i class="ti ti-plus"></i> Agregar material</button>
+      </div>
+      <div class="mfoot">
+        <button class="btn" onclick="closeM('m-edit-ing')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveEditIng()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
       </div>
     </div>
   </div>
@@ -1362,77 +1431,284 @@ function renderMovPills(){
 }
 function setMovFilter(f){ movFilter=f; renderMovPills(); renderMovs(); }
 
+// ============================================================
+// CAMBIO 1 — Movimientos agrupados por documento
+// ============================================================
 function renderMovs(){
   var q=(document.getElementById("q-movs").value||"").toLowerCase();
-  var indexed=[];
-  for(var i=DB.movs.length-1;i>=0;i--){
+  // Agrupar movimientos por documento
+  var docs={};
+  for(var i=0;i<DB.movs.length;i++){
     var m=DB.movs[i];
+    var fq=!q||m.doc.toLowerCase().indexOf(q)>=0||m.ref.toLowerCase().indexOf(q)>=0||(m.deleg&&m.deleg.toLowerCase().indexOf(q)>=0);
     var ft=movFilter==="todos"||m.tipo===movFilter;
-    var fq=!q||m.cod.toLowerCase().indexOf(q)>=0||m.glosa.toLowerCase().indexOf(q)>=0||m.doc.toLowerCase().indexOf(q)>=0;
-    if(ft&&fq) indexed.push({m:m,realIdx:i});
+    if(!ft||!fq) continue;
+    if(!docs[m.doc]){
+      docs[m.doc]={doc:m.doc,tipo:m.tipo,fecha:m.fecha,ref:m.ref,deleg:m.deleg||"",estado:m.estado,items:[],movIdxs:[]};
+    }
+    docs[m.doc].items.push(m);
+    docs[m.doc].movIdxs.push(i);
   }
-  var tb=document.getElementById("tbody-movs");
-  if(!indexed.length){tb.innerHTML='<tr><td colspan="10"><div class="empty"><i class="ti ti-history"></i><p>Sin movimientos</p></div></td></tr>';return;}
+  var list=Object.values(docs).sort(function(a,b){return b.fecha.localeCompare(a.fecha);});
+  var cont=document.getElementById("docs-list");
+  if(!list.length){
+    cont.innerHTML='<div class="empty"><i class="ti ti-history"></i><p>Sin movimientos</p></div>';
+    return;
+  }
   var tcls={despacho:"badge-amber",ingreso:"badge-green",ajuste:"badge-blue"};
+  var tlbl={despacho:"Despacho",ingreso:"Ingreso",ajuste:"Ajuste"};
   var h="";
-  indexed.forEach(function(entry){
-    var m=entry.m,realIdx=entry.realIdx;
+  list.forEach(function(d,di){
+    var totalQty=0;
+    d.items.forEach(function(it){totalQty+=Math.abs(it.qty);});
     var dr=null;
-    if(m.tipo==="despacho"){ for(var j=0;j<DB.desp.length;j++){if(DB.desp[j].id===m.doc){dr=DB.desp[j];break;}} }
-    var pdfBtn=dr?'<button class="btn btn-icon btn-ghost btn-sm" onclick="_showPDFIdx('+realIdx+')" title="Ver acta PDF"><i class="ti ti-file-download"></i></button>':"—";
-    var qcol=m.tipo==="despacho"?"color:var(--danger)":"color:var(--primary)";
-    h+='<tr>'+
-      '<td style="white-space:nowrap">'+m.fecha+'</td>'+
-      '<td><span class="badge '+(tcls[m.tipo]||"badge-gray")+'">'+m.tipo.charAt(0).toUpperCase()+m.tipo.slice(1)+'</span></td>'+
-      '<td><span class="itag">'+m.doc+'</span></td>'+
-      '<td><span class="itag">'+m.cod+'</span></td>'+
-      '<td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.glosa+'</td>'+
-      '<td style="text-align:right;font-weight:700;'+qcol+'">'+(m.tipo==="despacho"?"-":"+")+Math.abs(m.qty)+'</td>'+
-      '<td><span class="badge badge-gray">'+(m.estado||"—")+'</span></td>'+
-      '<td style="color:var(--text2);font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m.ref+'</td>'+
-      '<td>'+pdfBtn+'</td>'+
-      '<td><button class="btn btn-icon btn-sm btn-danger" onclick="borrarMovimiento('+realIdx+')" title="Eliminar y revertir stock"><i class="ti ti-trash"></i></button></td>'+
-    '</tr>';
+    if(d.tipo==="despacho"){for(var j=0;j<DB.desp.length;j++){if(DB.desp[j].id===d.doc){dr=DB.desp[j];break;}}}
+    var pdfBtn=dr?'<button class="btn btn-ghost btn-sm" onclick="_showPDFDoc(\''+d.doc+'\')"><i class="ti ti-file-download"></i> PDF</button>':"";
+    var editBtn='<button class="btn btn-ghost btn-sm" onclick="editDoc(\''+d.doc+'\')"><i class="ti ti-edit"></i> Editar</button>';
+    var delBtn='<button class="btn btn-ghost btn-sm btn-danger" onclick="borrarDocumento(\''+d.doc+'\')"><i class="ti ti-trash"></i> Eliminar</button>';
+    h+='<div class="card" style="margin-bottom:12px;cursor:default">'+
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+        '<span class="badge '+(tcls[d.tipo]||"badge-gray")+'">'+( tlbl[d.tipo]||d.tipo)+'</span>'+
+        '<span class="itag" style="font-size:14px">'+d.doc+'</span>'+
+        '<span style="color:var(--text2);font-size:13px">'+d.fecha+'</span>'+
+        '<span style="color:var(--text2);font-size:13px;flex:1">'+d.ref+'</span>'+
+        '<span style="color:var(--text3);font-size:12px">'+d.items.length+' material(es) — '+totalQty+' unidades</span>'+
+        '<div style="display:flex;gap:6px;flex-shrink:0">'+
+          '<button class="btn btn-ghost btn-sm" onclick="toggleDocDetail(\'dd-'+di+'\')"><i class="ti ti-chevron-down"></i> Ver detalle</button>'+
+          editBtn+
+          (d.tipo==="despacho"?pdfBtn:"")+
+          delBtn+
+        '</div>'+
+      '</div>'+
+      '<div id="dd-'+di+'" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">'+
+        '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
+          '<thead><tr style="background:var(--surface2)">'+
+            '<th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border)">Código</th>'+
+            '<th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border)">Glosa</th>'+
+            '<th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border)">Cantidad</th>'+
+            '<th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border)">Estado</th>'+
+          '</tr></thead><tbody>'+
+          d.items.map(function(it){
+            return '<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6"><span class="itag">'+it.cod+'</span></td>'+
+              '<td style="padding:8px 12px;border-bottom:1px solid #f3f4f6">'+it.glosa+'</td>'+
+              '<td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:600">'+Math.abs(it.qty)+'</td>'+
+              '<td style="padding:8px 12px;border-bottom:1px solid #f3f4f6"><span class="badge badge-gray">'+(it.estado||"—")+'</span></td>'+
+            '</tr>';
+          }).join("")+
+        '</tbody></table>'+
+        (d.tipo==="despacho"&&d.deleg?'<div style="margin-top:10px;font-size:12px;color:var(--text2)"><i class="ti ti-map-pin"></i> Delegación: <strong>'+d.deleg+'</strong></div>':"")+
+      '</div>'+
+    '</div>';
   });
-  tb.innerHTML=h;
+  cont.innerHTML=h;
 }
 
-function _showPDFIdx(movIdx){
-  var m=DB.movs[movIdx]; if(!m) return;
-  for(var j=0;j<DB.desp.length;j++){ if(DB.desp[j].id===m.doc){ showPDF(DB.desp[j]); return; } }
+function toggleDocDetail(id){
+  var el=document.getElementById(id); if(!el) return;
+  el.style.display=el.style.display==="none"?"block":"none";
+  var btn=el.previousElementSibling&&el.previousElementSibling.querySelector('[onclick*="toggleDocDetail"]');
 }
 
-function borrarMovimiento(idx){
-  var m=DB.movs[idx];
-  if(!m){showAlert("Movimiento no encontrado","w");return;}
-  var qty=Math.abs(m.qty);
-  if(!confirm("¿Eliminar este movimiento?\n\nTipo: "+m.tipo+"\nDocumento: "+m.doc+"\nMaterial: "+m.cod+" — "+m.glosa+"\nCantidad: "+qty+"\n\nEl stock se revertirá automáticamente.")) return;
-  // Revertir stock
-  var st=null;
-  for(var j=0;j<DB.stock.length;j++){if(DB.stock[j].c===m.cod){st=DB.stock[j];break;}}
-  if(st){
-    if(m.tipo==="despacho"){
-      st.s+=m.qty; // qty es positivo, fue salida → devolver
-    } else if(m.tipo==="ingreso"){
-      st.s-=m.qty;
-      if(st.s<0) st.s=0;
-    } else if(m.tipo==="ajuste"){
-      st.s-=m.qty;
-      if(st.s<0) st.s=0;
+function _showPDFDoc(docId){
+  for(var j=0;j<DB.desp.length;j++){if(DB.desp[j].id===docId){showPDF(DB.desp[j]);return;}}
+}
+
+function borrarDocumento(docId){
+  var movs=DB.movs.filter(function(m){return m.doc===docId;});
+  if(!movs.length){showAlert("Documento no encontrado","w");return;}
+  var tipo=movs[0].tipo;
+  var totalItems=movs.length;
+  if(!confirm("¿Eliminar el documento "+docId+"?\n("+totalItems+" movimiento(s))\n\nEl stock se revertirá automáticamente.")) return;
+  // Revertir stock de todos los movimientos del documento
+  movs.forEach(function(m){
+    var st=null;
+    for(var j=0;j<DB.stock.length;j++){if(DB.stock[j].c===m.cod){st=DB.stock[j];break;}}
+    if(st){
+      if(m.tipo==="despacho"){ st.s+=Math.abs(m.qty); }
+      else if(m.tipo==="ingreso"){ st.s-=Math.abs(m.qty); if(st.s<0)st.s=0; }
+    }
+  });
+  DB.movs=DB.movs.filter(function(m){return m.doc!==docId;});
+  if(tipo==="despacho") DB.desp=DB.desp.filter(function(d){return d.id!==docId;});
+  dbSave(); renderMovs(); renderDashboard();
+  showAlert("Documento "+docId+" eliminado y stock revertido.","s");
+}
+
+// ============================================================
+// CAMBIO 1b — Editar documento (despacho o ingreso)
+// ============================================================
+var edDRows=[];
+var eiRows2=[];
+
+function editDoc(docId){
+  var movs=DB.movs.filter(function(m){return m.doc===docId;});
+  if(!movs.length) return;
+  var tipo=movs[0].tipo;
+  if(tipo==="despacho"){
+    var dr=null;
+    for(var j=0;j<DB.desp.length;j++){if(DB.desp[j].id===docId){dr=DB.desp[j];break;}}
+    if(!dr){showAlert("No se encontró el acta de despacho","w");return;}
+    // Rellenar form edición despacho
+    document.getElementById("ed-despidx").value=docId;
+    document.getElementById("ed-id").value=dr.id;
+    document.getElementById("ed-fecha").value=dr.fecha;
+    document.getElementById("ed-deleg").value=dr.deleg||"";
+    document.getElementById("ed-entr").value=dr.entr||"";
+    document.getElementById("ed-recibe").value=dr.recib||"";
+    document.getElementById("ed-obs").value=dr.obs||"";
+    edDRows=JSON.parse(JSON.stringify(dr.items));
+    renderEdDRows();
+    openM("m-edit-desp");
+  } else if(tipo==="ingreso"){
+    document.getElementById("ei2-docid").value=docId;
+    document.getElementById("ei2-doc").value=docId;
+    document.getElementById("ei2-fecha").value=movs[0].fecha;
+    document.getElementById("ei2-resp").value=movs[0].ref||"";
+    document.getElementById("ei2-prov").value=movs[0].prov||"";
+    eiRows2=movs.map(function(m){return {c:m.cod,g:m.glosa,qty:Math.abs(m.qty),u:"",estado:m.estado||"Nuevo"};});
+    renderEiRows2();
+    openM("m-edit-ing");
+  }
+}
+
+// Rows edición despacho
+function renderEdDRows(){
+  var wrap=document.getElementById("ed-items-wrap"); if(!wrap) return;
+  var h="";
+  edDRows.forEach(function(row,i){
+    h+='<div class="acrow">'+
+      '<div class="fgroup acwrap" style="flex:1.3;min-width:120px">'+
+        (i===0?'<span class="flabel">Código</span>':'')+
+        '<input type="text" value="'+row.c+'" data-i="'+i+'" class="edd-cod" oninput="onEdDCode(this)" onfocus="onEdDCode(this)" onblur="hideAC(\'edac'+i+'\')">'+
+        '<div class="aclist" id="edac'+i+'" style="display:none"></div>'+
+      '</div>'+
+      '<div class="fgroup" style="flex:2;min-width:140px">'+
+        (i===0?'<span class="flabel">Glosa</span>':'')+
+        '<input type="text" value="'+row.g+'" readonly>'+
+      '</div>'+
+      '<div class="fgroup" style="flex:0.5;min-width:70px">'+
+        (i===0?'<span class="flabel">Cant.</span>':'')+
+        '<input type="number" min="1" value="'+row.qty+'" data-i="'+i+'" oninput="edDRows[+this.dataset.i].qty=+this.value||1">'+
+      '</div>'+
+      '<div style="'+(i===0?'padding-top:20px':'')+';flex-shrink:0">'+
+        '<button class="btn btn-icon btn-danger btn-sm" onclick="edDRows.splice('+i+',1);renderEdDRows()"><i class="ti ti-trash"></i></button>'+
+      '</div>'+
+    '</div>';
+  });
+  wrap.innerHTML=h;
+}
+function onEdDCode(inp){
+  var i=+inp.dataset.i,v=inp.value;
+  edDRows[i].c=v;
+  var m=DB.stock.filter(function(s){return s.c.toLowerCase()===v.toLowerCase();})[0];
+  if(m){edDRows[i].g=m.g;edDRows[i].u=m.u;}
+  var row=inp.closest(".acrow");
+  if(row&&m){var inputs=row.querySelectorAll("input");if(inputs[1])inputs[1].value=m.g;}
+  showACSugg("edac"+i,v,function(o){edDRows[i].c=o.c;edDRows[i].g=o.g;edDRows[i].u=o.u;hideAC("edac"+i);renderEdDRows();});
+}
+function addEdDRow(){edDRows.push({c:"",g:"",qty:1,u:""});renderEdDRows();}
+
+function saveEditDesp(){
+  var docId=document.getElementById("ed-despidx").value;
+  var fecha=document.getElementById("ed-fecha").value;
+  var deleg=document.getElementById("ed-deleg").value.trim();
+  var entr=document.getElementById("ed-entr").value.trim();
+  var recib=document.getElementById("ed-recibe").value.trim();
+  var obs=document.getElementById("ed-obs").value.trim();
+  if(!fecha||!deleg||!entr||!recib){showAlert("Complete los campos obligatorios","w");return;}
+  if(edDRows.some(function(r){return !r.c;})){showAlert("Complete el código de todos los materiales","w");return;}
+  // Revertir stock anterior de este despacho
+  DB.movs.filter(function(m){return m.doc===docId&&m.tipo==="despacho";}).forEach(function(m){
+    var st=DB.stock.filter(function(s){return s.c===m.cod;})[0];
+    if(st) st.s+=Math.abs(m.qty);
+  });
+  // Eliminar movimientos anteriores del doc
+  DB.movs=DB.movs.filter(function(m){return m.doc!==docId;});
+  // Crear nuevos movimientos
+  edDRows.forEach(function(row){
+    var st=DB.stock.filter(function(s){return s.c===row.c;})[0];
+    if(st) st.s-=row.qty;
+    DB.movs.push({fecha:fecha,tipo:"despacho",doc:docId,cod:row.c,glosa:row.g,qty:row.qty,ref:entr+" → "+recib,deleg:deleg,estado:"Entregado"});
+  });
+  // Actualizar registro de despacho
+  for(var j=0;j<DB.desp.length;j++){
+    if(DB.desp[j].id===docId){
+      DB.desp[j].fecha=fecha;DB.desp[j].deleg=deleg;DB.desp[j].entr=entr;
+      DB.desp[j].recib=recib;DB.desp[j].obs=obs;DB.desp[j].items=JSON.parse(JSON.stringify(edDRows));
+      break;
     }
   }
-  // Si era despacho, limpiar desp si no quedan más ítems del mismo acta
-  if(m.tipo==="despacho"){
-    var otros=DB.movs.filter(function(x,xi){return xi!==idx&&x.doc===m.doc;});
-    if(!otros.length) DB.desp=DB.desp.filter(function(d){return d.id!==m.doc;});
-  }
-  DB.movs.splice(idx,1);
-  dbSave();
-  renderMovs();
-  renderDashboard();
-  showAlert("Movimiento eliminado. Stock revertido correctamente.","s");
-  if(syncOn) syncSheets();
+  dbSave(); closeM("m-edit-desp"); renderMovs(); renderDashboard();
+  showAlert("Despacho "+docId+" actualizado correctamente.","s");
 }
+
+// Rows edición ingreso
+function renderEiRows2(){
+  var wrap=document.getElementById("ei2-items-wrap"); if(!wrap) return;
+  var h="";
+  eiRows2.forEach(function(row,i){
+    h+='<div class="acrow">'+
+      '<div class="fgroup acwrap" style="flex:1.3;min-width:120px">'+
+        (i===0?'<span class="flabel">Código</span>':'')+
+        '<input type="text" value="'+row.c+'" data-i="'+i+'" oninput="onEiCode2(this)" onfocus="onEiCode2(this)" onblur="hideAC(\'eiac'+i+'\')">'+
+        '<div class="aclist" id="eiac'+i+'" style="display:none"></div>'+
+      '</div>'+
+      '<div class="fgroup" style="flex:2;min-width:140px">'+
+        (i===0?'<span class="flabel">Glosa</span>':'')+
+        '<input type="text" value="'+row.g+'" data-i="'+i+'" class="ei2glosa" oninput="eiRows2[+this.dataset.i].g=this.value">'+
+      '</div>'+
+      '<div class="fgroup" style="flex:0.5;min-width:70px">'+
+        (i===0?'<span class="flabel">Cant.</span>':'')+
+        '<input type="number" min="1" value="'+row.qty+'" data-i="'+i+'" oninput="eiRows2[+this.dataset.i].qty=+this.value||1">'+
+      '</div>'+
+      '<div class="fgroup" style="flex:0.6;min-width:80px">'+
+        (i===0?'<span class="flabel">Estado</span>':'')+
+        '<select data-i="'+i+'" onchange="eiRows2[+this.dataset.i].estado=this.value">'+
+          '<option value="Nuevo"'+(row.estado==="Nuevo"?" selected":"")+'>Nuevo</option>'+
+          '<option value="Reintegro"'+(row.estado==="Reintegro"?" selected":"")+'>Reintegro</option>'+
+          '<option value="Reparado"'+(row.estado==="Reparado"?" selected":"")+'>Reparado</option>'+
+        '</select>'+
+      '</div>'+
+      '<div style="'+(i===0?'padding-top:20px':'')+';flex-shrink:0">'+
+        '<button class="btn btn-icon btn-danger btn-sm" onclick="eiRows2.splice('+i+',1);renderEiRows2()"><i class="ti ti-trash"></i></button>'+
+      '</div>'+
+    '</div>';
+  });
+  wrap.innerHTML=h;
+}
+function onEiCode2(inp){
+  var i=+inp.dataset.i,v=inp.value;
+  eiRows2[i].c=v;
+  var m=DB.stock.filter(function(s){return s.c.toLowerCase()===v.toLowerCase();})[0];
+  if(m){eiRows2[i].g=m.g;}
+  showACSugg("eiac"+i,v,function(o){eiRows2[i].c=o.c;eiRows2[i].g=o.g;hideAC("eiac"+i);renderEiRows2();});
+}
+function addEiRow(){eiRows2.push({c:"",g:"",qty:1,u:"",estado:"Nuevo"});renderEiRows2();}
+
+function saveEditIng(){
+  var docId=document.getElementById("ei2-docid").value;
+  var fecha=document.getElementById("ei2-fecha").value;
+  var resp=document.getElementById("ei2-resp").value.trim();
+  var prov=document.getElementById("ei2-prov").value.trim()||"—";
+  if(!fecha||!resp){showAlert("Complete los campos obligatorios","w");return;}
+  if(eiRows2.some(function(r){return !r.c||!r.g;})){showAlert("Complete código y glosa en todos los materiales","w");return;}
+  // Revertir stock anterior
+  DB.movs.filter(function(m){return m.doc===docId&&m.tipo==="ingreso";}).forEach(function(m){
+    var st=DB.stock.filter(function(s){return s.c===m.cod;})[0];
+    if(st){st.s-=Math.abs(m.qty);if(st.s<0)st.s=0;}
+  });
+  DB.movs=DB.movs.filter(function(m){return m.doc!==docId;});
+  // Nuevos movimientos
+  eiRows2.forEach(function(row){
+    var st=DB.stock.filter(function(s){return s.c===row.c;})[0];
+    if(st){st.s+=row.qty;}
+    else{DB.stock.push({c:row.c,g:row.g,t:"Otro",u:row.u||"Unidad",s:row.qty,min:5});}
+    DB.movs.push({fecha:fecha,tipo:"ingreso",doc:docId,cod:row.c,glosa:row.g,qty:row.qty,ref:resp,prov:prov,estado:row.estado});
+  });
+  dbSave(); closeM("m-edit-ing"); renderMovs(); renderDashboard();
+  showAlert("Ingreso "+docId+" actualizado correctamente.","s");
+}
+
 
 
 function exportMovsCSV(){
@@ -1554,14 +1830,29 @@ function downloadPDF(){
   html2canvas(el,{scale:2,useCORS:true,backgroundColor:"#ffffff",logging:false}).then(function(canvas){
     var jsPDF=window.jspdf.jsPDF;
     var pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-    var iw=210,ih=(canvas.height*210)/canvas.width,ph=297;
-    if(ih<=ph){ pdf.addImage(canvas.toDataURL("image/jpeg",.92),"JPEG",0,0,iw,ih); }
-    else{
-      var pages=Math.ceil(ih/ph);
-      for(var p=0;p<pages;p++){
-        if(p>0) pdf.addPage();
-        pdf.addImage(canvas.toDataURL("image/jpeg",.92),"JPEG",0,-p*ph,iw,ih);
+    // Márgenes: 10mm arriba/abajo, 0 laterales (el HTML ya tiene padding)
+    var margin=10;
+    var pageW=210;
+    var pageH=297;
+    var usableH=pageH-(margin*2); // altura útil por página con márgenes
+    // Escalar imagen al ancho de página
+    var imgW=pageW;
+    var imgH=(canvas.height*pageW)/canvas.width;
+    // Cuántas páginas necesitamos
+    var pages=Math.ceil(imgH/usableH);
+    for(var p=0;p<pages;p++){
+      if(p>0) pdf.addPage();
+      // offsetY: desplazamiento vertical de la imagen en esta página
+      var offsetY=margin-(p*usableH);
+      pdf.addImage(canvas.toDataURL("image/jpeg",.92),"JPEG",0,offsetY,imgW,imgH);
+      // Cubrir zona fuera del margen inferior con blanco para evitar sangrado
+      if(p<pages-1){
+        pdf.setFillColor(255,255,255);
+        pdf.rect(0,pageH-margin,pageW,margin,"F"); // margen inferior
       }
+      // Cubrir zona fuera del margen superior con blanco
+      pdf.setFillColor(255,255,255);
+      pdf.rect(0,0,pageW,margin,"F"); // margen superior
     }
     pdf.save("Acta_"+(pdfRec?pdfRec.id:"despacho")+"_"+new Date().toISOString().slice(0,10)+".pdf");
     btn.innerHTML='<i class="ti ti-download"></i> Descargar PDF';
