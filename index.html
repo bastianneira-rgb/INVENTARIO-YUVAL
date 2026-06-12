@@ -186,61 +186,107 @@ tbody tr:hover td{background:#fafbfc}
 /* RESPONSIVE */
 /* ===== RESPONSIVE MÓVIL ===== */
 @media(max-width:640px){
-  /* Layout general */
-  .app{padding-bottom:64px} /* espacio para nav inferior */
-  .main{padding:12px}
-  .card{padding:14px}
-  
+  /* Layout general — márgenes generosos para móvil */
+  .app{padding-bottom:70px}
+  .main{padding:16px}
+  .card{padding:18px 16px}
+
   /* Header compacto */
-  .header{padding:0 12px;height:52px}
+  .header{padding:0 16px;height:54px}
   .hlogo-name{font-size:14px}
   .hlogo-sub{display:none}
-  #sync-btn span{display:none} /* solo icono en móvil */
-  #sync-btn{padding:7px 10px}
-  
+  #sync-btn span{display:none}
+  #sync-btn{padding:8px 12px}
+
   /* Ocultar nav horizontal, usar nav inferior */
   .nav{display:none}
-  
+
   /* Nav inferior móvil */
   .nav-mobile{display:flex!important}
-  
-  /* Grids */
-  .kpis{grid-template-columns:repeat(2,1fr);gap:8px}
-  .kpi{padding:12px 14px}
-  .kpi-val{font-size:20px}
-  .kpi-icon{font-size:24px}
-  
+
+  /* Grids KPI */
+  .kpis{grid-template-columns:repeat(2,1fr);gap:10px}
+  .kpi{padding:14px 16px}
+  .kpi-val{font-size:22px}
+  .kpi-icon{font-size:26px}
+
   /* Dashboard cards en columna */
   #panel-dashboard > div:last-child{grid-template-columns:1fr!important}
-  
+
   /* Formularios */
   .fgrid{grid-template-columns:1fr}
   .fgroup.span2,.fgroup.full{grid-column:1}
-  .factions{flex-direction:column}
-  .factions .btn{width:100%;justify-content:center}
-  
-  /* Filas de items */
-  .acrow{flex-direction:column;gap:6px;padding:10px}
+  .fgroup input,.fgroup select,.fgroup textarea{font-size:15px;padding:10px 12px}
+  .factions{flex-direction:column;gap:10px}
+  .factions .btn{width:100%;justify-content:center;padding:12px}
+
+  /* Filas de items (despacho/ingreso) */
+  .acrow{flex-direction:column;gap:8px;padding:12px}
   .acrow .fgroup{width:100%!important;min-width:unset!important}
-  
-  /* Tabla: scroll horizontal */
-  .tw{font-size:12px}
-  
+
+  /* ── TABLAS → CARDS en móvil ── */
+  /* Ocultar encabezado de tabla */
+  .tw table thead{display:none}
+  /* Cada fila se convierte en card */
+  .tw table,
+  .tw tbody,
+  .tw tr{display:block;width:100%}
+  .tw tr{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    margin-bottom:10px;
+    padding:10px 14px;
+    position:relative;
+  }
+  /* Cada celda ocupa todo el ancho con label */
+  .tw td{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:5px 0;
+    border:none;
+    font-size:13px;
+    gap:8px;
+  }
+  /* Ocultar celdas vacías o de acción secundaria */
+  .tw td:empty{display:none}
+  /* Botones de acción al fondo */
+  .tw td:last-child{
+    justify-content:flex-end;
+    padding-top:8px;
+    border-top:1px solid var(--border);
+    margin-top:4px;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+
   /* Modal fullscreen en móvil */
   .moverlay{padding:0;align-items:flex-end}
-  .modal{border-radius:16px 16px 0 0;max-height:92vh;width:100%;max-width:100%}
+  .modal{border-radius:18px 18px 0 0;max-height:94vh;width:100%;max-width:100%}
   .modal-wide{max-width:100%}
-  
+  .mbody{padding:20px 18px}
+  .mhead{padding:16px 18px}
+
   /* Section header */
-  .ph{flex-direction:column;align-items:flex-start;gap:8px}
-  .ph > div:last-child{width:100%;display:flex;flex-wrap:wrap;gap:6px}
-  
-  /* Botones en fila */
-  .btn-sm{font-size:12px;padding:5px 10px}
+  .ph{flex-direction:column;align-items:flex-start;gap:10px}
+  .ph > div:last-child{width:100%;display:flex;flex-wrap:wrap;gap:8px}
+  .ph-title{font-size:15px}
+
+  /* Botones */
+  .btn{font-size:14px}
+  .btn-sm{font-size:13px;padding:7px 12px}
 
   /* Cards movimientos */
-  .card > div:first-child{flex-direction:column;align-items:flex-start;gap:8px}
-  .card > div:first-child > div:last-child{width:100%;justify-content:flex-start}
+  .card > div:first-child{flex-direction:column;align-items:flex-start;gap:10px}
+  .card > div:first-child > div:last-child{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:8px}
+
+  /* Búsqueda */
+  .searchbar{padding:10px 14px}
+  .searchbar input{font-size:14px}
+
+  /* Tags de filtro */
+  .fpill{padding:7px 14px;font-size:13px}
 }
 
 /* Tablet */
@@ -802,9 +848,19 @@ function dbLoadFromSheets(callback) {
       // Parsear despachos (JSON guardado como string en celda A1)
       try {
         var despJson = data.despachos || "[]";
-        if(typeof despJson === "string" && despJson.trim().length > 2){
-          DB.desp = JSON.parse(despJson);
+        if(typeof despJson === "object" && Array.isArray(despJson)){
+          DB.desp = despJson; // ya es array
+        } else if(typeof despJson === "string" && despJson.trim().length > 2){
+          var parsed = JSON.parse(despJson);
+          DB.desp = Array.isArray(parsed) ? parsed : [];
         }
+        // Merge: conservar actas locales que no estén en Sheets (creadas en móvil y aún no sincronizadas)
+        var localDesp = [];
+        try { localDesp = JSON.parse(localStorage.getItem("yv2_desp") || "[]"); } catch(e){}
+        localDesp.forEach(function(ld){
+          var exists = DB.desp.some(function(d){ return d.id === ld.id; });
+          if(!exists) DB.desp.push(ld);
+        });
       } catch(e){ DB.desp=[]; }
 
       // Actualizar cache local
@@ -1496,7 +1552,9 @@ function saveDespacho() {
   showAlert("Despacho "+acta+" registrado. Abriendo acta PDF...","s");
   // Mostrar PDF inmediatamente con el record guardado
   showPDF(rec);
-  if(syncOn) syncSheets();
+  // Siempre sincronizar (no solo si syncOn) para que actas creadas en móvil
+  // sean visibles en web y otros dispositivos
+  syncSheets();
 }
 
 function clearDespacho(){
@@ -1942,37 +2000,65 @@ function downloadPDF(){
   var el=document.getElementById("pdfdoc"); if(!el){showAlert("Sin documento","w");return;}
   var btn=document.getElementById("pdf-dl-btn");
   btn.textContent="Generando..."; btn.disabled=true;
-  html2canvas(el,{scale:2,useCORS:true,backgroundColor:"#ffffff",logging:false}).then(function(canvas){
+
+  // Forzar ancho fijo 800px independiente del dispositivo (web o móvil)
+  var oldW=el.style.width, oldMaxW=el.style.maxWidth, oldPos=el.style.position;
+  el.style.width="800px";
+  el.style.maxWidth="800px";
+  el.style.position="relative";
+
+  html2canvas(el,{
+    scale:2,
+    useCORS:true,
+    backgroundColor:"#ffffff",
+    logging:false,
+    width:800,
+    windowWidth:900
+  }).then(function(canvas){
+    // Restaurar estilos
+    el.style.width=oldW; el.style.maxWidth=oldMaxW; el.style.position=oldPos;
+
     var jsPDF=window.jspdf.jsPDF;
     var pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-    // Márgenes: 10mm arriba/abajo, 0 laterales (el HTML ya tiene padding)
-    var margin=10;
-    var pageW=210;
-    var pageH=297;
-    var usableH=pageH-(margin*2); // altura útil por página con márgenes
-    // Escalar imagen al ancho de página
-    var imgW=pageW;
-    var imgH=(canvas.height*pageW)/canvas.width;
-    // Cuántas páginas necesitamos
-    var pages=Math.ceil(imgH/usableH);
-    for(var p=0;p<pages;p++){
-      if(p>0) pdf.addPage();
-      // offsetY: desplazamiento vertical de la imagen en esta página
-      var offsetY=margin-(p*usableH);
-      pdf.addImage(canvas.toDataURL("image/jpeg",.92),"JPEG",0,offsetY,imgW,imgH);
-      // Cubrir zona fuera del margen inferior con blanco para evitar sangrado
-      if(p<pages-1){
-        pdf.setFillColor(255,255,255);
-        pdf.rect(0,pageH-margin,pageW,margin,"F"); // margen inferior
-      }
-      // Cubrir zona fuera del margen superior con blanco
-      pdf.setFillColor(255,255,255);
-      pdf.rect(0,0,pageW,margin,"F"); // margen superior
+    var pageW=210, pageH=297, margin=12;
+    var usableH=pageH-(margin*2);
+    var imgW=pageW-(margin*2); // márgenes laterales también
+    var imgH=(canvas.height*(imgW))/canvas.width;
+
+    // Dividir en páginas respetando márgenes
+    // Usamos slices de canvas para evitar contenido cortado
+    var canvasPxPerMm=canvas.width/imgW;
+    var sliceH=Math.floor(usableH*canvasPxPerMm); // píxeles por página
+
+    var totalH=canvas.height;
+    var yPx=0;
+    var page=0;
+    while(yPx<totalH){
+      if(page>0) pdf.addPage();
+      var remaining=totalH-yPx;
+      var thisSlice=Math.min(sliceH,remaining);
+
+      // Crear canvas temporal para este slice
+      var tmpCanvas=document.createElement("canvas");
+      tmpCanvas.width=canvas.width;
+      tmpCanvas.height=thisSlice;
+      var ctx=tmpCanvas.getContext("2d");
+      ctx.fillStyle="#ffffff";
+      ctx.fillRect(0,0,tmpCanvas.width,tmpCanvas.height);
+      ctx.drawImage(canvas,0,-yPx);
+
+      var sliceMmH=(thisSlice/canvasPxPerMm);
+      pdf.addImage(tmpCanvas.toDataURL("image/jpeg",.93),"JPEG",margin,margin,imgW,sliceMmH);
+
+      yPx+=thisSlice;
+      page++;
     }
+
     pdf.save("Acta_"+(pdfRec?pdfRec.id:"despacho")+"_"+new Date().toISOString().slice(0,10)+".pdf");
     btn.innerHTML='<i class="ti ti-download"></i> Descargar PDF';
     btn.disabled=false;
   }).catch(function(e){
+    el.style.width=oldW; el.style.maxWidth=oldMaxW; el.style.position=oldPos;
     showAlert("Error al generar PDF: "+e.message,"d");
     btn.innerHTML='<i class="ti ti-download"></i> Descargar PDF';
     btn.disabled=false;
